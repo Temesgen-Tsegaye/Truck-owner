@@ -10,6 +10,9 @@ export interface ShipmentItem {
     quantity: number;
     origin: string;
     destination: string;
+    startingPlace: string;
+    destinationPlace: string;
+    weight: number;
     deliveryDate: string;
     merchant: {
       id: string;
@@ -35,6 +38,13 @@ export interface ShipmentItem {
   };
   createdAt: string;
   updatedAt: string;
+  driver?: {
+    id: string;
+    user: {
+      firstName: string | null;
+      lastName: string | null;
+    };
+  };
 }
 
 export const useShipmentsQuery = () => {

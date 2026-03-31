@@ -13,11 +13,12 @@ type Props = {
 export function ShipmentCard({ shipment, onPress, onTrack }: Props) {
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 768;
-  const isActive = ["accepted", "in_progress", "in transit"].includes(shipment.status.toLowerCase());
+  const lowerStatus = shipment.status.toLowerCase();
+  const isActive = ["accepted", "in_progress", "in transit", "in_transit"].includes(lowerStatus);
 
   const getStatusConfig = (status: string) => {
     const lowerStatus = status.toLowerCase();
-    
+
     if (["pending", "created"].includes(lowerStatus)) {
       return {
         color: "#F59E0B",
@@ -50,7 +51,7 @@ export function ShipmentCard({ shipment, onPress, onTrack }: Props) {
         bgColor: "#FEE2E2"
       };
     }
-    
+
     return {
       color: "#6B7280",
       icon: "help-circle-outline",
@@ -127,9 +128,9 @@ export function ShipmentCard({ shipment, onPress, onTrack }: Props) {
         <Text style={styles.timestamp}>
           Created {new Date(shipment.createdAt).toLocaleDateString()}
         </Text>
-        {shipment.assignedDriver && (
+        {shipment.driver && (
           <Text style={styles.driverText}>
-            Driver: {shipment.assignedDriver.name || "Assigned"}
+            Driver: {shipment.driver.user.firstName || "Assigned"}
           </Text>
         )}
       </View>
@@ -139,7 +140,6 @@ export function ShipmentCard({ shipment, onPress, onTrack }: Props) {
           title="Track Shipment"
           onPress={onTrack}
           style={styles.trackButton}
-          icon={<Ionicons name="map-outline" size={16} color="#FFFFFF" />}
         />
       )}
     </TouchableOpacity>

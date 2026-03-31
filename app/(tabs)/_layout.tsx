@@ -1,9 +1,9 @@
-import { Tabs, useRouter, useSegments } from "expo-router";
+import { Tabs, useRouter, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { View, Pressable } from "react-native";
-import { Switch, Text } from "react-native-paper";
+import { Switch } from "react-native-paper";
 import { useAppTheme } from "@/context/theme-context";
 
 /**
@@ -12,16 +12,12 @@ import { useAppTheme } from "@/context/theme-context";
  */
 function ChatTabBarButton(props: any) {
   const router = useRouter();
-  const segments = useSegments();
+  const pathname = usePathname();
 
   const handlePress = () => {
-    console.log("ChatTabBarButton pressed", segments);
-    // If we're already in the chat tab but nested deeper than the index (i.e., in a room)
-    if (
-      segments[0] === "(tabs)" &&
-      segments[1] === "chat" &&
-      segments.length > 2
-    ) {
+    console.log("ChatTabBarButton pressed", pathname);
+    // If we're already in a chat room (pathname contains /chat/ followed by an ID)
+    if (/\/chat\/[^/]+/.test(pathname)) {
       console.log("Navigating to chat index");
       router.replace("/(tabs)/chat");
     } else {
@@ -68,10 +64,23 @@ export default function AppLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Available Loads",
+          title: "Loads",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "cube" : "cube-outline"}
+              name={focused ? 'cube' : 'cube-outline'}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="shipments"
+        options={{
+          title: "Shipments",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'archive' : 'archive-outline'}
               size={24}
               color={color}
             />
@@ -84,7 +93,7 @@ export default function AppLayout() {
           title: "My Trucks",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "car" : "car-outline"}
+              name={focused ? 'car' : 'car-outline'}
               size={24}
               color={color}
             />
@@ -110,6 +119,7 @@ export default function AppLayout() {
         name="profile"
         options={{
           title: "Profile",
+          headerShown: false,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "person" : "person-outline"}

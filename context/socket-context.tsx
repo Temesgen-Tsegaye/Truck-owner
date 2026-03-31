@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Platform } from 'react-native';
-import { sessionStore } from '@/store/session-store';
+import { useSessionStore } from '@/store/session-store';
 
 interface SocketContextData {
   socket: Socket | null;
@@ -25,71 +25,71 @@ const getSocketUrl = () => {
 };
 
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
+
+  const { token, isLoading: isSessionLoading } = useSessionStore();
 
   useEffect(() => {
-    const initSocket = async () => {
-      const token = sessionStore.getState().token;
-      if (!token) return;
+    if (isSessionLoading || !token) return;
 
-      const socket = io(getSocketUrl(), {
-        auth: { token },
-        transports: ['websocket'],
-      });
+    console.log('[Socket] Initializing socket with token');
+    const socketInstance = io(getSocketUrl(), {
+      auth: { token },
+      transports: ['websocket'],
+    });
 
-      socket.on('connect', () => {
-        setIsConnected(true);
-        console.log('[Socket] Connected');
-      });
+    socketInstance.on('connect', () => {
+      setIsConnected(true);
+      console.log('[Socket] Connected, ID:', socketInstance.id);
+    });
 
-      socket.on('disconnect', () => {
-        setIsConnected(false);
-        console.log('[Socket] Disconnected');
-      });
+    socketInstance.on('disconnect', () => {
+      setIsConnected(false);
+      console.log('[Socket] Disconnected');
+    });
 
-      socketRef.current = socket;
-    };
-
-    initSocket();
+    setSocket(socketInstance);
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      console.log('[Socket] Cleaning up socket connection');
+      socketInstance.disconnect();
+      setSocket(null);
+      setIsConnected(false);
     };
-  }, []);
+  }, [token, isSessionLoading]);
 
-  const joinRoom = (roomId: string) => {
-    socketRef.current?.emit('join_room', { roomId });
-  };
+  const joinRoom = useCallback((roomId: string) => {
+    socket?.emit('join_room', { roomId });
+  }, [socket]);
 
-  const leaveRoom = (roomId: string) => {
-    socketRef.current?.emit('leave_room', { roomId });
-  };
+  const leaveRoom = useCallback((roomId: string) => {
+    socket?.emit('leave_room', { roomId });
+  }, [socket]);
 
-  const sendMessage = (roomId: string, content: string) => {
-    socketRef.current?.emit('send_message', { roomId, content });
-  };
+  const sendMessage = useCallback((roomId: string, content: string) => {
+    socket?.emit('send_message', { roomId, content });
+  }, [socket]);
 
-  const joinShipmentRoom = (shipmentId: string) => {
-    socketRef.current?.emit('join_shipment_room', { shipmentId });
-  };
+  const joinShipmentRoom = useCallback((shipmentId: string) => {
+    console.log(`[Socket] Emitting join_shipment_room for ${shipmentId}`);
+    socket?.emit('join_shipment_room', { shipmentId });
+  }, [socket]);
 
-  const leaveShipmentRoom = (shipmentId: string) => {
-    socketRef.current?.emit('leave_shipment_room', { shipmentId });
-  };
+  const leaveShipmentRoom = useCallback((shipmentId: string) => {
+    socket?.emit('leave_shipment_room', { shipmentId });
+  }, [socket]);
 
-  const sendLocationUpdate = (shipmentId: string, latitude: number, longitude: number, accuracy?: number) => {
-    socketRef.current?.emit('location_update', { shipmentId, latitude, longitude, accuracy });
-  };
+  const sendLocationUpdate = useCallback((shipmentId: string, latitude: number, longitude: number, accuracy?: number) => {
+    socket?.emit('location_update', { shipmentId, latitude, longitude, accuracy });
+  }, [socket]);
 
   return (
-    <SocketContext.Provider value={{ 
-      socket: socketRef.current, 
-      isConnected, 
-      joinRoom, 
-      leaveRoom, 
+    <SocketContext.Provider value={{
+      socket,
+      isConnected,
+      joinRoom,
+      leaveRoom,
       sendMessage,
       joinShipmentRoom,
       leaveShipmentRoom,

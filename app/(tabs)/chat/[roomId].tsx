@@ -12,12 +12,12 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSocket } from "@/context/socket-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { api } from "@/lib/api";
-import { AgreementStatus } from "@/components/chat/agreement-status";
+import { FloatingAgreementBar } from "@/components/chat/floating-agreement-bar";
 import { useVehiclesQuery } from "@/query/vehicles";
-import type { VehicleItem } from "@/lib/vehicle-schemas";
 import Toast from "react-native-toast-message";
 
 export default function ChatRoom() {
@@ -28,6 +28,7 @@ export default function ChatRoom() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [agreement, setAgreement] = useState<any>(null);
+  const [loadingAgreement, setLoadingAgreement] = useState(true);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [showVehiclePicker, setShowVehiclePicker] = useState(false);
 
@@ -41,6 +42,7 @@ export default function ChatRoom() {
 
   const fetchAgreement = useCallback(async () => {
     try {
+      setLoadingAgreement(true);
       const res = await api.get(`/chat/room/${roomId}/agreement`);
       const agreementData = res.data;
       setAgreement(agreementData);
@@ -49,6 +51,13 @@ export default function ChatRoom() {
       }
     } catch (e) {
       console.error("Failed to fetch agreement", e);
+      Toast.show({
+        type: "error",
+        text1: "Failed to load agreement",
+        text2: "Please try again later.",
+      });
+    } finally {
+      setLoadingAgreement(false);
     }
   }, [roomId]);
 
@@ -256,134 +265,123 @@ export default function ChatRoom() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={styles.container}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-    >
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
-        </Pressable>
-        <Text style={styles.title}>Negotiation</Text>
-        <AgreementStatus agreement={agreement} userType="vehicleOwner" />
-        {agreement?.vehicleOwnerAgreed && !agreement?.merchantAgreed && selectedVehicle && (
-          <Pressable
-            onPress={() => setShowVehiclePicker(true)}
-            style={styles.changeVehicleButton}
-          >
-            <Text style={styles.changeVehicleButtonText}>
-              Change Vehicle
-            </Text>
-          </Pressable>
-        )}
-        <Pressable
-          onPress={handleToggleAgreement}
-          style={[
-            styles.agreeButton,
-            agreement?.vehicleOwnerAgreed && styles.agreedButton,
-          ]}
-        >
-          <Text style={styles.agreeButtonText}>
-            {agreement?.vehicleOwnerAgreed ? "Agreed ✅" : "Agree"}
-          </Text>
-        </Pressable>
-      </View>
-      {selectedVehicle && (
-        <View style={styles.vehicleInfo}>
-          <Text style={styles.vehicleInfoText}>
-            Selected vehicle: {selectedVehicle.licensePlate} ({selectedVehicle.vehicleType})
-          </Text>
-        </View>
-      )}
-
-      <Modal
-        visible={showVehiclePicker}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowVehiclePicker(false)}
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select a Vehicle</Text>
-            <ScrollView style={styles.vehicleList}>
-              {vehicles.map((vehicle) => (
-                <TouchableOpacity
-                  key={vehicle.id}
-                  style={[
-                    styles.vehicleItem,
-                    selectedVehicleId === vehicle.id && styles.vehicleItemSelected,
-                  ]}
-                  onPress={() => handleVehicleSelect(vehicle.id)}
-                >
-                  <Text style={styles.vehicleItemText}>
-                    {vehicle.licensePlate} - {vehicle.vehicleType} ({vehicle.capacity} tons)
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <Pressable
-              style={styles.modalCancelButton}
-              onPress={() => setShowVehiclePicker(false)}
-            >
-              <Text style={styles.modalCancelButtonText}>Cancel</Text>
-            </Pressable>
-          </View>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>←</Text>
+          </Pressable>
+          <Text style={styles.title}>Negotiation</Text>
         </View>
-      </Modal>
 
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id || Math.random().toString()}
-        renderItem={({ item }) => (
-          <View
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => item.id || Math.random().toString()}
+          renderItem={({ item }) => (
+            <View
+              style={[
+                styles.messageBubble,
+                item.vehicleOwnerId || item.tempId
+                  ? styles.myMessage
+                  : styles.theirMessage,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.messageText,
+                  !(item.vehicleOwnerId || item.tempId) && { color: "#374151" },
+                ]}
+              >
+                {item.content}
+              </Text>
+            </View>
+          )}
+          contentContainerStyle={styles.messageList}
+          ListHeaderComponent={
+            <FloatingAgreementBar
+              agreement={{
+                ...agreement,
+                vehicle: selectedVehicle ? {
+                  licensePlate: selectedVehicle.licensePlate,
+                  vehicleType: selectedVehicle.vehicleType
+                } : undefined
+              }}
+              userType="vehicleOwner"
+              onToggleAgreement={handleToggleAgreement}
+              onChangeVehicle={() => setShowVehiclePicker(true)}
+              isVehicleOwner={true}
+              isLoading={loadingAgreement}
+            />
+          }
+        />
+
+        <Modal
+          visible={showVehiclePicker}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowVehiclePicker(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select a Vehicle</Text>
+              <ScrollView style={styles.vehicleList}>
+                {vehicles.map((vehicle) => (
+                  <TouchableOpacity
+                    key={vehicle.id}
+                    style={[
+                      styles.vehicleItem,
+                      selectedVehicleId === vehicle.id && styles.vehicleItemSelected,
+                    ]}
+                    onPress={() => handleVehicleSelect(vehicle.id)}
+                  >
+                    <Text style={styles.vehicleItemText}>
+                      {vehicle.licensePlate} - {vehicle.vehicleType} ({vehicle.capacity} tons)
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <Pressable
+                style={styles.modalCancelButton}
+                onPress={() => setShowVehiclePicker(false)}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            value={text}
+            onChangeText={setText}
+            placeholder="Type a message..."
+            multiline
+          />
+          <Pressable
             style={[
-              styles.messageBubble,
-              item.vehicleOwnerId || item.tempId
-                ? styles.myMessage
-                : styles.theirMessage,
+              styles.sendButton,
+              (sending || !text.trim()) && styles.sendButtonDisabled,
             ]}
+            onPress={handleSend}
+            disabled={sending || !text.trim()}
           >
             <Text
               style={[
-                styles.messageText,
-                !(item.vehicleOwnerId || item.tempId) && { color: "#374151" },
+                styles.sendText,
+                (sending || !text.trim()) && styles.sendTextDisabled,
               ]}
             >
-              {item.content}
+              {sending ? "Sending..." : "Send"}
             </Text>
-          </View>
-        )}
-        contentContainerStyle={styles.messageList}
-      />
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={text}
-          onChangeText={setText}
-          placeholder="Type a message..."
-          multiline
-        />
-        <Pressable
-          style={[
-            styles.sendButton,
-            (sending || !text.trim()) && styles.sendButtonDisabled,
-          ]}
-          onPress={handleSend}
-          disabled={sending || !text.trim()}
-        >
-          <Text
-            style={[
-              styles.sendText,
-              (sending || !text.trim()) && styles.sendTextDisabled,
-            ]}
-          >
-            {sending ? "Sending..." : "Send"}
-          </Text>
-        </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -392,6 +390,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FAFB",
   },
+  keyboardView: {
+    flex: 1,
+  },
   header: {
     padding: 16,
     backgroundColor: "#FFF",
@@ -399,7 +400,6 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5E7EB",
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: 60,
   },
   backButton: {
     marginRight: 12,
@@ -467,44 +467,7 @@ const styles = StyleSheet.create({
   sendTextDisabled: {
     color: "#9CA3AF",
   },
-  agreeButton: {
-    backgroundColor: "#10B981",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  agreedButton: {
-    backgroundColor: "#059669",
-  },
-  agreeButtonText: {
-    color: "#FFF",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  changeVehicleButton: {
-    backgroundColor: "#3B82F6",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  changeVehicleButtonText: {
-    color: "#FFF",
-    fontSize: 10,
-    fontWeight: "500",
-  },
-  vehicleInfo: {
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  vehicleInfoText: {
-    fontSize: 12,
-    color: "#4B5563",
-    fontWeight: "500",
-  },
+
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",

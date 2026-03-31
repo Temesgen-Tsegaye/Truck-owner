@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   ActivityIndicator,
   Alert,
   Pressable,
@@ -49,6 +48,11 @@ interface ShipmentDetails {
     };
   };
   assignedDriverId: string | null;
+  locationUpdates?: {
+    latitude: number;
+    longitude: number;
+    timestamp: string;
+  }[];
 }
 
 interface LocationUpdate {
@@ -66,42 +70,14 @@ export default function ShipmentDetail() {
   const { isDarkMode } = useAppTheme();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
   const { socket, joinShipmentRoom, leaveShipmentRoom } = useSocket();
-  
+
   const [shipment, setShipment] = useState<ShipmentDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [driverLocation, setDriverLocation] = useState<[number, number] | null>(null);
   const [locationUpdates, setLocationUpdates] = useState<LocationUpdate[]>([]);
 
-  useEffect(() => {
-    fetchShipmentDetails();
-
-    return () => {
-      if (id) {
-        leaveShipmentRoom(id);
-      }
-    };
-  }, [id]);
-
-  useEffect(() => {
-    if (id && socket) {
-      joinShipmentRoom(id);
-      
-      const handleLocationUpdate = (data: LocationUpdate) => {
-        console.log('Received location update from driver:', data);
-        setDriverLocation([data.longitude, data.latitude]);
-        setLocationUpdates(prev => [...prev, data]);
-      };
-      
-      socket.on('location_update', handleLocationUpdate);
-      
-      return () => {
-        socket.off('location_update', handleLocationUpdate);
-      };
-    }
-  }, [id, socket]);
-
-  const fetchShipmentDetails = async () => {
+  const fetchShipmentDetails = useCallback(async () => {
     try {
       setLoading(true);
       const { data } = await api.get(`/shipments/${id}`);
@@ -112,7 +88,47 @@ export default function ShipmentDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchShipmentDetails();
+  }, [fetchShipmentDetails]);
+
+  useEffect(() => {
+    if (shipment?.locationUpdates && shipment.locationUpdates.length > 0) {
+      const latest = shipment.locationUpdates[0];
+      console.log('[ShipmentDetail] Setting initial location from DB:', latest);
+      setDriverLocation([latest.longitude, latest.latitude]);
+    }
+  }, [shipment]);
+
+  useEffect(() => {
+    return () => {
+      if (id) {
+        leaveShipmentRoom(id);
+      }
+    };
+  }, [id, fetchShipmentDetails, leaveShipmentRoom]);
+
+  useEffect(() => {
+    if (id && socket) {
+      joinShipmentRoom(id);
+
+      const handleLocationUpdate = (data: LocationUpdate) => {
+        console.log('Received location update from driver:', data);
+        setDriverLocation([data.longitude, data.latitude]);
+        setLocationUpdates(prev => [...prev, data]);
+      };
+
+      socket.on('location_update', handleLocationUpdate);
+
+      return () => {
+        socket.off('location_update', handleLocationUpdate);
+      };
+    }
+  }, [id, socket, joinShipmentRoom]);
+
+
 
   if (loading) {
     return (
@@ -133,7 +149,7 @@ export default function ShipmentDetail() {
     );
   }
 
-  const mapCenter = driverLocation || [9.145, 40.4897]; // Default to Ethiopia center
+  const mapCenter = driverLocation || [38.7578, 9.0320]; // Addis Ababa
   const markers = driverLocation ? [{
     id: 'driver',
     coordinate: driverLocation,
@@ -141,10 +157,8 @@ export default function ShipmentDetail() {
     description: 'Real-time tracking',
   }] : [];
 
-  const latestUpdate = locationUpdates[locationUpdates.length - 1];
-
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
@@ -159,123 +173,17 @@ export default function ShipmentDetail() {
       {/* Map Section */}
       <View style={styles.mapContainer}>
         <MapComponent
-          initialCenter={mapCenter}
-          initialZoom={driverLocation ? 14 : 10}
+          center={mapCenter}
+          zoom={driverLocation ? 14 : 10}
           markers={markers}
           style={styles.map}
         />
-        
-        {/* Tracking Status */}
-        <View style={styles.trackingStatus}>
-          {driverLocation ? (
-            <View style={[styles.statusIndicator, { backgroundColor: theme.tint + '20' }]}>
-              <Ionicons name="radio-button-on" size={16} color={theme.tint} />
-              <Text style={[styles.statusText, { color: theme.tint, marginLeft: 8 }]}>
-                Driver location: {latestUpdate ? new Date(latestUpdate.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live'}
-              </Text>
-            </View>
-          ) : (
-            <View style={[styles.statusIndicator, { backgroundColor: theme.icon + '20' }]}>
-              <Ionicons name="radio-button-off" size={16} color={theme.icon} />
-              <Text style={[styles.statusText, { color: theme.icon, marginLeft: 8 }]}>
-                Waiting for driver location
-              </Text>
-            </View>
-          )}
-        </View>
+
+
       </View>
 
-      {/* Shipment Details */}
-      <View style={[styles.detailsCard, { backgroundColor: isDarkMode ? '#1e1e1e' : '#fff' }]}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Load Details</Text>
-        
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.icon }]}>Product</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>{shipment.load.productType}</Text>
-        </View>
-        
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.icon }]}>Quantity</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>{shipment.load.quantity} units</Text>
-        </View>
-        
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.icon }]}>Route</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>{shipment.load.origin} → {shipment.load.destination}</Text>
-        </View>
-        
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.icon }]}>Delivery Date</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>
-            {new Date(shipment.load.deliveryDate).toLocaleDateString()}
-          </Text>
-        </View>
 
-        <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>Vehicle Details</Text>
-        
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.icon }]}>License Plate</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>{shipment.vehicle.licensePlate}</Text>
-        </View>
-        
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.icon }]}>Vehicle Type</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>{shipment.vehicle.vehicleType}</Text>
-        </View>
-
-        <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>Driver Information</Text>
-        
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.icon }]}>Driver Status</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>
-            {shipment.assignedDriverId ? 'Assigned' : 'Not Assigned'}
-          </Text>
-        </View>
-        
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.icon }]}>Tracking Status</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>
-            {driverLocation ? 'Active' : 'Inactive'}
-          </Text>
-        </View>
-
-        <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>Consignor Information</Text>
-        
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.icon }]}>Name</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>
-            {shipment.load.merchant.user.firstName} {shipment.load.merchant.user.lastName}
-          </Text>
-        </View>
-        
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.icon }]}>Phone</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>
-            {shipment.load.merchant.user.phoneNumber || 'N/A'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Location Updates History */}
-      {locationUpdates.length > 0 && (
-        <View style={[styles.historyCard, { backgroundColor: isDarkMode ? '#1e1e1e' : '#fff' }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            Location History ({locationUpdates.length} updates)
-          </Text>
-          {locationUpdates.slice(-5).reverse().map((update, index) => (
-            <View key={index} style={styles.historyItem}>
-              <Ionicons name="location" size={16} color={theme.tint} />
-              <Text style={[styles.historyText, { color: theme.text }]}>
-                {update.latitude.toFixed(5)}, {update.longitude.toFixed(5)}
-              </Text>
-              <Text style={[styles.historyTime, { color: theme.icon }]}>
-                {new Date(update.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -311,7 +219,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   mapContainer: {
-    height: 300,
+    flex: 1,
     position: 'relative',
   },
   map: {
@@ -322,6 +230,9 @@ const styles = StyleSheet.create({
     bottom: 16,
     left: 16,
     right: 16,
+  },
+  trackingStatusInline: {
+    marginBottom: 16,
   },
   statusIndicator: {
     flexDirection: 'row',

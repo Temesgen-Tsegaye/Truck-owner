@@ -54,10 +54,12 @@ export interface CreateAssignmentRequestParams {
 }
 
 export const useSearchDriversQuery = (params: SearchDriversParams) => {
-  return useQuery({
+  return useQuery<{ data: Driver[]; meta: any }>({
     queryKey: ["drivers", "search", params],
     queryFn: async () => {
+      console.log("[Driver Search] Searching with params:", params);
       const { data } = await api.get<{ data: Driver[]; meta: any }>("/driver-assignment-requests/drivers", { params });
+      console.log("[Driver Search] Results:", data);
       return data;
     },
     enabled: !!params.search && params.search.length >= 2,

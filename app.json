@@ -7,13 +7,19 @@
     "icon": "./assets/images/logo/flowera-logo.png",
     "scheme": "flowera-truck-owner",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.truckowner",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs access to your location to show your position on the map.",
-        "ITSAppUsesNonExemptEncryption": false
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location in the background to provide location-based services.",
+        "NSUserNotificationsUsageDescription": "This app needs to send you notifications about your deliveries and updates.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "location",
+          "remote-notification",
+          "fetch"
+        ]
       }
     },
     "android": {
@@ -28,7 +34,9 @@
       "package": "com.anonymous.truckowner",
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -51,28 +59,42 @@
       ],
       "expo-font",
       "expo-secure-store",
-      ["@maplibre/maplibre-react-native", {
-        "android": {
-          "nativeVariant": "opengl",
-          "nativeVersion": "11.12.1",
-          "pluginVersion": "3.0.2",
-          "turfVersion": "6.0.1",
-          "okhttpVersion": "4.9.0",
-          "locationEngine": "default"
-        },
-        "ios": {
-          "nativeVersion": "11.12.1"
+      [
+        "@maplibre/maplibre-react-native",
+        {
+          "android": {
+            "nativeVariant": "opengl",
+            "nativeVersion": "11.12.1",
+            "pluginVersion": "3.0.2",
+            "turfVersion": "6.0.1",
+            "okhttpVersion": "4.9.0",
+            "locationEngine": "default",
+            "kotlinVersion": "1.7.0",
+            "minSdkVersion": 21,
+            "targetSdkVersion": 31,
+            "compileSdkVersion": 31,
+            "ndkVersion": "21.4.7075529"
+          },
+          "ios": {
+            "nativeVersion": "11.12.1"
+          }
         }
-      }]
+      ],
+      "expo-build-properties",
+      "expo-task-manager",
+      "expo-background-fetch",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true
     },
+    "newArchEnabled": true,
     "extra": {
       "router": {},
       "eas": {
         "projectId": "98951a30-001e-4522-9b87-0c354e00905e"
       }
-    }
+    },
+    "owner": "hailehaile"
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -39,16 +39,22 @@ export default function TruckOwners() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
 
-  const { data: vehicles, isLoading } = useVehiclesQuery();
+  const { data: vehicles, isLoading, error } = useVehiclesQuery();
   const deleteMutation = useDeleteVehicleMutation();
   const createMutation = useCreateVehicleMutation();
   const createAssignmentMutation = useCreateAssignmentRequestMutation();
   const cancelAssignmentMutation = useCancelAssignmentRequestMutation();
   const { data: assignmentRequests } = useAssignmentRequestsQuery();
   const { data: driversSearchResults, isLoading: searchingDrivers } = useSearchDriversQuery({
-    search: searchQuery,
+    search: searchQuery.trim(),
     limit: 10,
   });
+
+  useEffect(() => {
+    console.log('[Driver Search] searchQuery:', searchQuery);
+    console.log('[Driver Search] results:', driversSearchResults);
+    console.log('[Driver Search] loading:', searchingDrivers);
+  }, [searchQuery, driversSearchResults, searchingDrivers]);
 
   const {
     control,
@@ -93,10 +99,21 @@ export default function TruckOwners() {
     );
   }
 
+  if (error) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.subtitle, { color: theme.text }]}>Failed to load trucks. Please try again.</Text>
+      </View>
+    );
+  }
+
+  const vehicleList = vehicles || [];
+  console.log('Vehicles:', vehicleList);
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <FlatList
-        data={vehicles}
+        data={vehicleList}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 15, paddingBottom: 100 }}
         ListEmptyComponent={

@@ -13,6 +13,8 @@ import { WebView } from "react-native-webview";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useSession } from "@/context/auth-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function WelcomeScreen() {
   const { signIn } = useSession();
@@ -107,7 +109,15 @@ export default function WelcomeScreen() {
           <TouchableOpacity 
             style={[styles.button, styles.telegramButton]} 
             onPress={handleTelegramLogin}
+            activeOpacity={0.8}
           >
+            <LinearGradient
+              colors={['#0088CC', '#00A2E8', '#00C6FF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.gradient}
+            />
+            <Ionicons name="paper-plane" size={20} color="#fff" style={styles.icon} />
             <Text style={styles.buttonText}>Continue with Telegram</Text>
           </TouchableOpacity>
         </View>
@@ -160,9 +170,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    position: 'relative',
   },
   telegramButton: {
-    backgroundColor: '#0088CC', 
+    backgroundColor: 'transparent',
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#0088CC',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  gradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  icon: {
+    marginRight: 10,
   },
   buttonText: {
     color: '#ffffff',

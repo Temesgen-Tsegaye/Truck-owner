@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useVehiclesQuery, useDeleteVehicleMutation, useCreateVehicleMutation } from '@/query/vehicles';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 import { useAppTheme } from '@/context/theme-context';
 import { Skeleton } from '@/components/global/skeleton';
 import { useForm, Controller } from 'react-hook-form';
@@ -102,23 +102,34 @@ export default function TruckOwners() {
   if (error) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <Text style={[styles.subtitle, { color: theme.text }]}>Failed to load trucks. Please try again.</Text>
+        <View style={styles.emptyState}>
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>Failed to load trucks.</Text>
+          <Text style={[styles.emptySubtitle, { color: theme.subtext }]}>Please try again.</Text>
+        </View>
       </View>
     );
   }
 
   const vehicleList = vehicles || [];
-  console.log('Vehicles:', vehicleList);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <FlatList
         data={vehicleList}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 15, paddingBottom: 100 }}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <View style={styles.headerContainer}>
+            <Text style={[styles.pageTitle, { color: theme.text }]}>My Trucks</Text>
+            <Text style={[styles.pageSubtitle, { color: theme.subtext }]}>
+              Manage your fleet and drivers.
+            </Text>
+          </View>
+        }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.subtitle, { color: theme.text }]}>No trucks found. Add your first truck!</Text>
+          <View style={styles.emptyState}>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>No Trucks Found</Text>
+            <Text style={[styles.emptySubtitle, { color: theme.subtext }]}>Add your first truck to start assigning drivers.</Text>
           </View>
         }
          renderItem={({ item }) => {
@@ -126,44 +137,54 @@ export default function TruckOwners() {
              (req) => req.vehicleId === item.id && req.status === 'PENDING'
            );
            return (
-             <View style={[styles.card, { backgroundColor: isDarkMode ? '#1e1e1e' : '#fff' }]}>
+             <View style={[styles.card, { backgroundColor: theme.background, borderColor: theme.border }]}>
                <View style={styles.cardHeader}>
-                 <View>
-                   <Text style={[styles.licensePlate, { color: theme.text }]}>{item.licensePlate}</Text>
-                   <Text style={[styles.vehicleType, { color: theme.icon }]}>{item.vehicleType}</Text>
+                 <View style={styles.cardHeaderLeft}>
+                   <View style={[styles.iconContainer, { backgroundColor: 'rgba(56, 9, 100, 0.1)' }]}>
+                     <Ionicons name="car-outline" size={24} color={theme.tint} />
+                   </View>
+                   <View>
+                     <Text style={[styles.licensePlate, { color: theme.text }]}>{item.licensePlate}</Text>
+                     <Text style={[styles.vehicleType, { color: theme.subtext }]}>{item.vehicleType.replace('_', ' ')} • {item.capacity}T</Text>
+                   </View>
                  </View>
-                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                   <TouchableOpacity onPress={() => {
-                     setSelectedVehicle(item);
-                     setDriverModalVisible(true);
-                   }}>
-                     <Ionicons name="person-add-outline" size={24} color={theme.tint} />
+                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                   <TouchableOpacity 
+                     style={[styles.actionButton, { backgroundColor: 'rgba(56, 9, 100, 0.08)' }]}
+                     onPress={() => {
+                       setSelectedVehicle(item);
+                       setDriverModalVisible(true);
+                     }}
+                   >
+                     <Ionicons name="person-add-outline" size={18} color={theme.tint} />
                    </TouchableOpacity>
-                   <TouchableOpacity onPress={() => deleteMutation.mutate(item.id)}>
-                     <Ionicons name="trash-outline" size={24} color="#FF3B30" />
+                   <TouchableOpacity 
+                     style={[styles.actionButton, { backgroundColor: 'rgba(255, 59, 48, 0.1)' }]}
+                     onPress={() => deleteMutation.mutate(item.id)}
+                   >
+                     <Ionicons name="trash-outline" size={18} color="#FF3B30" />
                    </TouchableOpacity>
                  </View>
                </View>
-               <View style={styles.cardFooter}>
-                 <Text style={[styles.capacity, { color: theme.text }]}>Capacity: {item.capacity} Tons</Text>
+               <View style={[styles.cardFooter, { borderTopColor: theme.border }]}>
                  {item.driver ? (
-                   <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                     <Ionicons name="person" size={16} color={theme.icon} />
-                     <Text style={[styles.driverText, { color: theme.text, marginLeft: 6 }]}>
-                       Driver: {item.driver.user.firstName} {item.driver.user.lastName}
+                   <View style={styles.driverStatus}>
+                     <View style={[styles.statusDot, { backgroundColor: '#10B981' }]} />
+                     <Text style={[styles.driverText, { color: theme.text }]}>
+                       {item.driver.user.firstName} {item.driver.user.lastName}
                      </Text>
                    </View>
                  ) : pendingRequest ? (
-                   <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                     <Ionicons name="time-outline" size={16} color="#FFA500" />
-                     <Text style={[styles.driverText, { color: '#FFA500', marginLeft: 6 }]}>
+                   <View style={styles.driverStatus}>
+                     <View style={[styles.statusDot, { backgroundColor: '#F59E0B' }]} />
+                     <Text style={[styles.driverText, { color: '#F59E0B' }]}>
                        Assignment pending
                      </Text>
                    </View>
                  ) : (
-                   <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                     <Ionicons name="alert-circle-outline" size={16} color="#FF3B30" />
-                     <Text style={[styles.driverText, { color: '#FF3B30', marginLeft: 6 }]}>
+                   <View style={styles.driverStatus}>
+                     <View style={[styles.statusDot, { backgroundColor: '#EF4444' }]} />
+                     <Text style={[styles.driverText, { color: '#EF4444' }]}>
                        No driver assigned
                      </Text>
                    </View>
@@ -443,131 +464,3 @@ export default function TruckOwners() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    marginTop: 50,
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  card: {
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  licensePlate: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  vehicleType: {
-    fontSize: 14,
-    marginTop: 2,
-  },
-  cardFooter: {
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 10,
-  },
-  capacity: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  modalContent: {
-    padding: 20,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    height: 50,
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    borderWidth: 1,
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 12,
-    marginTop: 5,
-  },
-  typeContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-   typeChip: {
-     paddingHorizontal: 15,
-     paddingVertical: 8,
-     borderRadius: 20,
-     borderWidth: 1,
-     borderColor: 'transparent',
-   },
-    driverText: {
-      fontSize: 14,
-      fontWeight: '500',
-    },
-    driverItem: {
-      borderRadius: 10,
-      padding: 15,
-      borderWidth: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    driverName: {
-      fontSize: 16,
-      fontWeight: '600',
-      marginBottom: 4,
-    },
-    driverDetail: {
-      fontSize: 12,
-      marginBottom: 2,
-    },
-  });

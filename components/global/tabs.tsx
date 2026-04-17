@@ -64,7 +64,7 @@ export  function Tabs({ tabs, activeIndex, onChange, style }: TabsProps) {
 
 export const AppColors = {
   // Primary brand color – main buttons, headers, active nav items
-  primary: '#380964', 
+  primary: '#ff642f', 
 
   // Secondary brand color – secondary buttons, links, tabs
   secondary: '#9B59B6',
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     position: 'relative',
-    backgroundColor: '#f8fafa', // light gray background
+    backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 5,
     overflow: 'hidden',
     width: '90%',
@@ -114,17 +114,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     bottom: 0,
-    backgroundColor: AppColors.primary, // soft light blue
+    backgroundColor: "#ff642f",
     borderRadius: 5,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#555',
+    color: "rgba(255,255,255,0.5)",
     zIndex: 1,
   },
   activeLabel: {
-    color: AppColors.surface, // darker blue for active text
+    color: "#fff",
   },
 });
 

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
@@ -13,17 +14,17 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useSocket } from "@/context/socket-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { api } from "@/lib/api";
 import { FloatingAgreementBar } from "@/components/chat/floating-agreement-bar";
+import { useLocalSocket } from "@/hooks/use-local-socket";
 import { useVehiclesQuery } from "@/query/vehicles";
 import Toast from "react-native-toast-message";
 
 export default function ChatRoom() {
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const router = useRouter();
-  const { socket, joinRoom, leaveRoom, sendMessage } = useSocket();
+  const { socket } = useLocalSocket();
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -96,8 +97,8 @@ export default function ChatRoom() {
   }, [roomId]);
 
   useEffect(() => {
-    if (roomId) {
-      joinRoom(roomId);
+    if (roomId && socket) {
+      socket.emit("join_room", { roomId });
       fetchMessages();
       fetchAgreement();
 
@@ -157,12 +158,12 @@ export default function ChatRoom() {
       socket?.on("agreement_updated", handleAgreementUpdate);
 
       return () => {
-        socket?.off("receive_message", handleNewMessage);
-        socket?.off("agreement_updated", handleAgreementUpdate);
-        leaveRoom(roomId);
+        socket.off("receive_message", handleNewMessage);
+        socket.off("agreement_updated", handleAgreementUpdate);
+        socket.emit("leave_room", { roomId });
       };
     }
-  }, [roomId, socket, fetchAgreement, fetchMessages, joinRoom, leaveRoom]);
+  }, [roomId, socket, fetchAgreement, fetchMessages]);
 
   const handleSend = async () => {
     if ((!text.trim() && !roomId) || sending) return;
@@ -184,7 +185,7 @@ export default function ChatRoom() {
 
     try {
       // Send via socket for real-time
-      sendMessage(roomId, text);
+      socket?.emit("send_message", { roomId, content: text });
 
       // Also send via HTTP POST to ensure persistence
       const response = await api.post(`/chat/room/${roomId}/messages`, {
@@ -273,7 +274,7 @@ export default function ChatRoom() {
       >
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>←</Text>
+            <Ionicons name="chevron-back" size={20} color="#fff" />
           </Pressable>
           <Text style={styles.title}>Negotiation</Text>
         </View>
@@ -293,7 +294,7 @@ export default function ChatRoom() {
               <Text
                 style={[
                   styles.messageText,
-                  !(item.vehicleOwnerId || item.tempId) && { color: "#374151" },
+                  !(item.vehicleOwnerId || item.tempId) && { color: "#FFF" },
                 ]}
               >
                 {item.content}
@@ -388,33 +389,35 @@ export default function ChatRoom() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#161412",
   },
   keyboardView: {
     flex: 1,
   },
   header: {
     padding: 16,
-    backgroundColor: "#FFF",
+    backgroundColor: "#161412",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "rgba(255,255,255,0.05)",
     flexDirection: "row",
     alignItems: "center",
   },
   backButton: {
+    height: 40,
+    width: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(28, 24, 21, 0.85)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
     marginRight: 12,
-    padding: 4,
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: "#4F46E5",
-    fontWeight: "600",
   },
   title: {
     flex: 1,
     fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    color: "#FFF",
   },
   messageList: {
     padding: 16,
@@ -427,11 +430,11 @@ const styles = StyleSheet.create({
   },
   myMessage: {
     alignSelf: "flex-end",
-    backgroundColor: "#4F46E5",
+    backgroundColor: "#ff642f",
   },
   theirMessage: {
     alignSelf: "flex-start",
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
   messageText: {
     color: "#FFF",
@@ -440,14 +443,15 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     padding: 16,
-    backgroundColor: "#FFF",
+    backgroundColor: "#161412",
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    borderTopColor: "rgba(255,255,255,0.05)",
     paddingBottom: Platform.OS === "ios" ? 30 : 16,
   },
   input: {
     flex: 1,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    color: "#FFF",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -461,11 +465,11 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   sendText: {
-    color: "#4F46E5",
+    color: "#ff642f",
     fontWeight: "600",
   },
   sendTextDisabled: {
-    color: "#9CA3AF",
+    color: "rgba(255,255,255,0.4)",
   },
 
   modalOverlay: {
@@ -475,7 +479,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#161412",
     borderRadius: 12,
     padding: 20,
     width: "80%",
@@ -484,7 +488,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    color: "#FFF",
     marginBottom: 16,
     textAlign: "center",
   },
@@ -495,14 +499,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "rgba(255,255,255,0.05)",
   },
   vehicleItemSelected: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "rgba(255, 100, 47, 0.15)",
   },
   vehicleItemText: {
     fontSize: 14,
-    color: "#374151",
+    color: "#FFF",
   },
   modalCancelButton: {
     marginTop: 16,

@@ -14,6 +14,8 @@ type Props = {
 export function CustomButton({ title, onPress, loading = false, disabled = false, style, textStyle, variant = 'primary' }: Props) {
   const buttonStyle = variant === 'outline' ? styles.outlineButton : styles.button;
   const textColorStyle = variant === 'outline' ? styles.outlineText : styles.text;
+  const spinnerColor = variant === 'outline' ? '#ff642f' : '#161412';
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -26,7 +28,7 @@ export function CustomButton({ title, onPress, loading = false, disabled = false
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === 'outline' ? '#380964' : '#fff'} />
+        <ActivityIndicator size="small" color={spinnerColor} />
       ) : (
         <Text style={[textColorStyle, textStyle]}>{title}</Text>
       )}
@@ -36,10 +38,11 @@ export function CustomButton({ title, onPress, loading = false, disabled = false
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#380964', // default primary color
+    backgroundColor: '#ff642f', // default primary color
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 50,
+    minHeight: 52,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10,
@@ -48,24 +51,31 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 50,
+    minHeight: 52,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10,
     borderWidth: 2,
-    borderColor: '#380964',
+    borderColor: '#ff642f',
   },
   text: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: '#161412',
+    fontWeight: '700',
+    fontSize: 17,
+    lineHeight: 22,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
   outlineText: {
-    color: '#380964',
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: '#ff642f',
+    fontWeight: '700',
+    fontSize: 17,
+    lineHeight: 22,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
   disabledButton: {
-    backgroundColor: '#A0A0A0', // gray when disabled/loading
+    backgroundColor: "rgba(255, 100, 47, 0.4)", // gray when disabled/loading
   },
 });

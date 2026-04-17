@@ -7,20 +7,21 @@ import { PhoneForm } from "@/components/profile/phone";
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTheme } from 'react-native-paper';
+import { StatusBar } from 'expo-status-bar';
 
 export default function EditProfile() {
   const [activeIndex, setActiveIndex] = useState(0);
   const queryClient = useQueryClient();
-  const theme = useTheme();
 
   useFocusEffect(
     useCallback(() => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     }, [queryClient]),
   );
+
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <View style={{ flex: 1, backgroundColor: '#161412' }}>
+      <StatusBar style="light" />
       <View style={{ paddingTop: 20 }}>
           <Tabs
             tabs={["Profile", "Truck Owner", "Phone"]}
@@ -34,7 +35,7 @@ export default function EditProfile() {
               exiting={FadeOut}
               style={{ paddingHorizontal: 20, marginTop: 16 }}
             >
-              <NameForm />
+              <NameForm  />
             </Animated.View>
           )}
           {activeIndex === 1 && (
@@ -44,16 +45,15 @@ export default function EditProfile() {
               exiting={FadeOut}
               style={{ paddingHorizontal: 20, marginTop: 16 }}
             >
-              <TruckOwnerForm />
+              <TruckOwnerForm  />
             </Animated.View>
           )}
           {activeIndex === 2 && (
             <Animated.View key="phone" entering={FadeIn} exiting={FadeOut}>
-              <PhoneForm />
+              <PhoneForm  />
             </Animated.View>
           )}
       </View>
     </View>
   );
 }
-

@@ -1,59 +1,21 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '@/context/theme-context';
-import { Colors } from '@/constants/theme';
-import { api } from '@/lib/api';
-import { useSocket } from '@/context/socket-context';
-import { MapComponent } from '@/components/map/MapComponent';
+import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MapComponent } from '@/components/map';
+import { useLocalSocket } from '@/hooks/use-local-socket';
+import { useShipmentQuery } from '@/query/shipments';
 
-interface ShipmentDetails {
-  id: string;
-  status: string;
-  load: {
-    id: string;
-    productType: string;
-    quantity: number;
-    origin: string;
-    destination: string;
-    deliveryDate: string;
-    merchant: {
-      id: string;
-      user: {
-        firstName: string | null;
-        lastName: string | null;
-        phoneNumber: string | null;
-      };
-    };
-  };
-  vehicle: {
-    id: string;
-    licensePlate: string;
-    vehicleType: string;
-    vehicleOwner: {
-      id: string;
-      user: {
-        firstName: string | null;
-        lastName: string | null;
-        phoneNumber: string | null;
-      };
-    };
-  };
-  assignedDriverId: string | null;
-  locationUpdates?: {
-    latitude: number;
-    longitude: number;
-    timestamp: string;
-  }[];
-}
+const SOCKET_STALE_MS = 20000;
+const SERVER_FALLBACK_INTERVAL_MS = 10000;
 
 interface LocationUpdate {
   shipmentId: string;
@@ -67,122 +29,139 @@ interface LocationUpdate {
 export default function ShipmentDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { isDarkMode } = useAppTheme();
-  const theme = Colors[isDarkMode ? 'dark' : 'light'];
-  const { socket, joinShipmentRoom, leaveShipmentRoom } = useSocket();
-
-  const [shipment, setShipment] = useState<ShipmentDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
+  const { socket, isConnected } = useLocalSocket();
+  const { data: shipment, isLoading, error, refetch } = useShipmentQuery(id);
   const [driverLocation, setDriverLocation] = useState<[number, number] | null>(null);
-  const [locationUpdates, setLocationUpdates] = useState<LocationUpdate[]>([]);
-
-  const fetchShipmentDetails = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { data } = await api.get(`/shipments/${id}`);
-      setShipment(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load shipment details');
-      Alert.alert('Error', 'Failed to load shipment details');
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+  const [lastSocketUpdateAt, setLastSocketUpdateAt] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchShipmentDetails();
-  }, [fetchShipmentDetails]);
-
-  useEffect(() => {
-    if (shipment?.locationUpdates && shipment.locationUpdates.length > 0) {
+    if (!isConnected && shipment?.locationUpdates?.length) {
       const latest = shipment.locationUpdates[0];
-      console.log('[ShipmentDetail] Setting initial location from DB:', latest);
       setDriverLocation([latest.longitude, latest.latitude]);
     }
-  }, [shipment]);
+  }, [shipment, isConnected]);
 
   useEffect(() => {
+    if (!id || !socket) {
+      return;
+    }
+
+    socket.emit('join_shipment_room', { shipmentId: id });
+
+    const handleLocationUpdate = (data: LocationUpdate) => {
+      setDriverLocation([data.longitude, data.latitude]);
+      setLastSocketUpdateAt(Date.now());
+    };
+
+    socket.on('location_update', handleLocationUpdate);
+
     return () => {
-      if (id) {
-        leaveShipmentRoom(id);
+      socket.off('location_update', handleLocationUpdate);
+      socket.emit('leave_shipment_room', { shipmentId: id });
+    };
+  }, [id, socket]);
+
+  useEffect(() => {
+    if (!id) {
+      return;
+    }
+
+    const fetchLatestLocationFromServer = async () => {
+      const now = Date.now();
+      const isSocketStale = !lastSocketUpdateAt || now - lastSocketUpdateAt > SOCKET_STALE_MS;
+      const shouldFallbackToServer = !isConnected || isSocketStale;
+
+      if (!shouldFallbackToServer) {
+        return;
+      }
+
+      try {
+        const result = await refetch();
+        const latest = result.data?.locationUpdates?.[0];
+
+        if (!latest) {
+          return;
+        }
+
+        setDriverLocation((current) => {
+          const hasFreshSocketData =
+            !!lastSocketUpdateAt && Date.now() - lastSocketUpdateAt <= SOCKET_STALE_MS;
+
+          if (hasFreshSocketData) {
+            return current;
+          }
+
+          return [latest.longitude, latest.latitude];
+        });
+      } catch (fetchError) {
+        console.log('[ShipmentDetail] Failed to fetch fallback location:', fetchError);
       }
     };
-  }, [id, fetchShipmentDetails, leaveShipmentRoom]);
 
-  useEffect(() => {
-    if (id && socket) {
-      joinShipmentRoom(id);
+    fetchLatestLocationFromServer();
+    const fallbackInterval = setInterval(fetchLatestLocationFromServer, SERVER_FALLBACK_INTERVAL_MS);
 
-      const handleLocationUpdate = (data: LocationUpdate) => {
-        console.log('Received location update from driver:', data);
-        setDriverLocation([data.longitude, data.latitude]);
-        setLocationUpdates(prev => [...prev, data]);
-      };
+    return () => {
+      clearInterval(fallbackInterval);
+    };
+  }, [id, isConnected, lastSocketUpdateAt, refetch]);
 
-      socket.on('location_update', handleLocationUpdate);
-
-      return () => {
-        socket.off('location_update', handleLocationUpdate);
-      };
-    }
-  }, [id, socket, joinShipmentRoom]);
-
-
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.tint} />
+      <View style={styles.loadingContainer}>
+        <StatusBar style="light" />
+        <ActivityIndicator size="large" color="#ff642f" />
       </View>
     );
   }
 
   if (error || !shipment) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <Text style={[styles.errorText, { color: theme.text }]}>{error || 'Shipment not found'}</Text>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={{ color: theme.tint }}>Go Back</Text>
+      <View style={styles.loadingContainer}>
+        <StatusBar style="light" />
+        <Text style={styles.errorText}>
+          {error instanceof Error ? error.message : 'Shipment not found'}
+        </Text>
+        <Pressable onPress={() => router.back()} style={styles.errorBackButton}>
+          <Text style={styles.errorBackLabel}>Go Back</Text>
         </Pressable>
       </View>
     );
   }
 
-  const mapCenter = driverLocation || [38.7578, 9.0320]; // Addis Ababa
-  const markers = driverLocation ? [{
-    id: 'driver',
-    coordinate: driverLocation,
-    title: 'Driver Location',
-    description: 'Real-time tracking',
-  }] : [];
+  const markers = driverLocation
+    ? [
+        {
+          id: 'driver',
+          coordinate: driverLocation,
+          title: 'Driver Location',
+          description: 'Real-time tracking',
+        },
+      ]
+    : [];
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Header */}
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <StatusBar style="light" />
+      <MapComponent
+        followCenter={Boolean(driverLocation)}
+        markers={markers}
+        showCompass
+        compassMargins={{ x: 16, y: insets.top + 10 }}
+      />
+
+      <View style={[styles.overlayRow, { top: insets.top + 10 }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={theme.text} />
+          <Ionicons name="chevron-back" size={20} color="#fff" />
         </Pressable>
-        <Text style={[styles.title, { color: theme.text }]}>Shipment #{shipment.id.slice(-6)}</Text>
-        <View style={styles.statusBadge}>
-          <Text style={[styles.statusText, { color: theme.tint }]}>{shipment.status}</Text>
+
+        <View style={styles.titleWrap}>
+          <Text style={styles.identifierText}>Shipment #{shipment.id.slice(-6)}</Text>
         </View>
+
+        <View style={styles.rightSpacer} />
       </View>
-
-      {/* Map Section */}
-      <View style={styles.mapContainer}>
-        <MapComponent
-          center={mapCenter}
-          zoom={driverLocation ? 14 : 10}
-          markers={markers}
-          style={styles.map}
-        />
-
-
-      </View>
-
-
     </View>
   );
 }
@@ -190,114 +169,69 @@ export default function ShipmentDetail() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#161412',
   },
-  header: {
-    flexDirection: 'row',
+  loadingContainer: {
+    flex: 1,
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    justifyContent: 'center',
+    backgroundColor: '#161412',
+    paddingHorizontal: 24,
   },
-  backButton: {
-    marginRight: 16,
-  },
-  title: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: 'rgba(79, 70, 229, 0.1)',
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  mapContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  map: {
-    flex: 1,
-  },
-  trackingStatus: {
+  overlayRow: {
     position: 'absolute',
-    bottom: 16,
     left: 16,
     right: 16,
-  },
-  trackingStatusInline: {
-    marginBottom: 16,
-  },
-  statusIndicator: {
+    height: 46,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-  },
-  detailsCard: {
-    margin: 16,
-    padding: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
   },
-  detailLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  historyCard: {
-    margin: 16,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  historyItem: {
-    flexDirection: 'row',
+  backButton: {
+    height: 46,
+    width: 46,
+    borderRadius: 23,
     alignItems: 'center',
-    marginBottom: 10,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(28, 24, 21, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
-  historyText: {
-    flex: 1,
-    marginLeft: 12,
+  backButtonLabel: {
     fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
   },
-  historyTime: {
-    fontSize: 12,
+  titleWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  rightSpacer: {
+    width: 46,
+    height: 46,
+  },
+  identifierText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#000',
   },
   errorText: {
     fontSize: 16,
+    color: '#fff',
     textAlign: 'center',
-    marginTop: 100,
     marginBottom: 20,
+  },
+  errorBackButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: '#ff642f',
+  },
+  errorBackLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
   },
 });

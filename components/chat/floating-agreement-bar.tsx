@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from 'expo-blur';
 
 type Props = {
   agreement: {
@@ -29,11 +30,11 @@ export function FloatingAgreementBar({
 }: Props) {
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <BlurView intensity={20} tint="dark" style={styles.container}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading agreement status...</Text>
         </View>
-      </View>
+      </BlurView>
     );
   }
 
@@ -50,7 +51,7 @@ export function FloatingAgreementBar({
   const bothAgreed = agreement.merchantAgreed && agreement.vehicleOwnerAgreed;
 
   return (
-    <View style={styles.container}>
+    <BlurView intensity={25} tint="dark" style={styles.container}>
       {/* Status Bar */}
       <View style={styles.statusBar}>
         {/* Current User Status */}
@@ -78,11 +79,11 @@ export function FloatingAgreementBar({
             <Ionicons 
               name={otherPartyAgreed ? "checkmark-circle" : "close-circle"} 
               size={16} 
-              color={otherPartyAgreed ? "#10B981" : "#6B7280"} 
+              color={otherPartyAgreed ? "#10B981" : "rgba(255,255,255,0.4)"} 
             />
             <Text style={[
               styles.statusText,
-              { color: otherPartyAgreed ? "#10B981" : "#6B7280" }
+              { color: otherPartyAgreed ? "#10B981" : "rgba(255,255,255,0.4)" }
             ]}>
               {otherPartyAgreed ? "Agreed" : "Not Agreed"}
             </Text>
@@ -92,7 +93,7 @@ export function FloatingAgreementBar({
         {/* Vehicle Info (for Truck Owner) */}
         {isVehicleOwner && agreement.vehicle && (
           <View style={styles.vehicleInfo}>
-            <Ionicons name="car-outline" size={14} color="#4B5563" />
+            <Ionicons name="car-outline" size={14} color="rgba(255,255,255,0.8)" />
             <Text style={styles.vehicleText}>
               {agreement.vehicle.licensePlate} • {agreement.vehicle.vehicleType}
             </Text>
@@ -139,23 +140,19 @@ export function FloatingAgreementBar({
           </View>
         )}
       </View>
-    </View>
+    </BlurView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 20,
     margin: 12,
-    padding: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    padding: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255,255,255,0.08)",
+    overflow: 'hidden',
   },
   loadingContainer: {
     alignItems: "center",
@@ -163,14 +160,14 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
-    color: "#6B7280",
+    color: "rgba(255,255,255,0.6)",
     fontWeight: "500",
   },
   statusBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
     flexWrap: "wrap",
     gap: 8,
   },
@@ -180,32 +177,32 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   statusLabel: {
-    fontSize: 12,
-    color: "#4B5563",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.6)",
     fontWeight: "500",
   },
   statusIndicator: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
   },
   vehicleInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 50,
   },
   vehicleText: {
-    fontSize: 11,
-    color: "#4B5563",
-    fontWeight: "500",
+    fontSize: 12,
+    color: "#fff",
+    fontWeight: "600",
   },
   actionBar: {
     flexDirection: "row",
@@ -217,39 +214,45 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    minWidth: 80,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 50,
+    minWidth: 90,
     justifyContent: "center",
   },
   notAgreedButton: {
     backgroundColor: "#10B981",
   },
   agreedButton: {
-    backgroundColor: "#059669",
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.4)",
   },
   changeVehicleButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
   },
   actionButtonText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
   },
   bothAgreedBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#8B5CF6",
-    paddingHorizontal: 12,
+    backgroundColor: "rgba(139, 92, 246, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.4)",
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 50,
     marginLeft: "auto",
   },
   bothAgreedText: {
-    color: "#FFFFFF",
-    fontSize: 12,
+    color: "#A78BFA",
+    fontSize: 13,
     fontWeight: "600",
   },
 });

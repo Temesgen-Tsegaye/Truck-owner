@@ -44,6 +44,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "@maplibre/maplibre-react-native",
       "expo-router",
       [
         "expo-splash-screen",
@@ -59,27 +60,6 @@
       ],
       "expo-font",
       "expo-secure-store",
-      [
-        "@maplibre/maplibre-react-native",
-        {
-          "android": {
-            "nativeVariant": "opengl",
-            "nativeVersion": "11.12.1",
-            "pluginVersion": "3.0.2",
-            "turfVersion": "6.0.1",
-            "okhttpVersion": "4.9.0",
-            "locationEngine": "default",
-            "kotlinVersion": "1.7.0",
-            "minSdkVersion": 21,
-            "targetSdkVersion": 31,
-            "compileSdkVersion": 31,
-            "ndkVersion": "21.4.7075529"
-          },
-          "ios": {
-            "nativeVersion": "11.12.1"
-          }
-        }
-      ],
       "expo-build-properties",
       "expo-task-manager",
       "expo-background-fetch",

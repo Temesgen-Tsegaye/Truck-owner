@@ -1,6 +1,7 @@
 import { View, StyleSheet, Alert } from 'react-native';
 import { useSession } from '@/context/auth-context';
 import { CustomButton } from '@/components/global/button';
+import { StatusBar } from 'expo-status-bar';
 
 export default function Settings() {
   const { signOut } = useSession();
@@ -18,6 +19,7 @@ export default function Settings() {
 
   return (
     <View style={styles.container}>
+      <StatusBar style="light" />
       <View style={styles.content}>
         <CustomButton 
           title="Log Out" 
@@ -38,19 +40,21 @@ export default function Settings() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: '#161412',
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: 24,
     justifyContent: 'center',
-    gap: 10,
+    gap: 16,
   },
   button: {
     width: '100%',
+    borderRadius: 999,
   },
   deleteButton: {
-    backgroundColor: '#EF4444',
-    marginTop: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
   },
 });

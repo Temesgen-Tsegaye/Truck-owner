@@ -127,7 +127,7 @@ export function PhoneForm() {
           <View style={styles.verifiedRow}>
             <Text style={styles.verifiedPhoneText}>{profile.phoneNumber}</Text>
             <Animated.View entering={ZoomIn} style={styles.verifiedBadge}>
-              <IconSymbol name="checkmark.seal.fill" size={20} color="#380964" />
+              <IconSymbol name="checkmark.seal.fill" size={20} color="#ff642f" />
               <Text style={styles.verifiedText}>Verified</Text>
             </Animated.View>
           </View>
@@ -191,15 +191,18 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   card: {
-    backgroundColor: '#f3f4f6',
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "rgba(255,255,255,0.02)",
+    marginVertical: 10,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
+    fontSize: 13,
+    fontWeight: "600",
     marginBottom: 8,
+    color: "rgba(255,255,255,0.7)",
   },
   inputContainer: {
     flexDirection: 'row',
@@ -208,21 +211,23 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    height: 54,
     borderWidth: 1,
-    borderColor: '#E1E8ED',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#F8F9FA',
+    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: "#FFF",
   },
   errorInput: {
     borderColor: '#E0245E',
   },
   sideButton: {
-    backgroundColor: '#380964',
+    backgroundColor: "#ff642f",
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     minWidth: 80,
@@ -257,7 +262,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   verifiedText: {
-    color: '#380964',
+    color: '#ff642f',
     fontWeight: '700',
     fontSize: 14,
   },
@@ -297,6 +302,6 @@ const styles = StyleSheet.create({
   },
   verifyButton: {
     height: 44,
-    backgroundColor: '#380964',
+    backgroundColor: "#ff642f",
   },
 });

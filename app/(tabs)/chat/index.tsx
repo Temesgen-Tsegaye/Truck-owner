@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import { useChatRoomsQuery } from '@/query/chat';
+import { StatusBar } from 'expo-status-bar';
 
 export default function ChatList() {
   const router = useRouter();
@@ -10,6 +12,7 @@ export default function ChatList() {
   if (isLoading) {
     return (
       <View style={styles.container}>
+        <StatusBar style="light" />
         <View style={styles.header}>
           <Text style={styles.title}>Messages</Text>
         </View>
@@ -23,6 +26,7 @@ export default function ChatList() {
   if (error) {
     return (
       <View style={styles.container}>
+        <StatusBar style="light" />
         <View style={styles.header}>
           <Text style={styles.title}>Messages</Text>
         </View>
@@ -36,32 +40,38 @@ export default function ChatList() {
 
   return (
     <View style={styles.container}>
+      <StatusBar style="light" />
       <View style={styles.header}>
         <Text style={styles.title}>Messages</Text>
       </View>
       <FlatList
         data={rooms}
         keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <Pressable 
             style={styles.roomItem}
             onPress={() => router.push(`/(tabs)/chat/${item.id}`)}
           >
-            <View style={styles.roomIcon}>
-              <Text style={styles.roomIconText}>
-                {item.merchant?.bussinessName?.charAt(0) || 
-                 item.merchant?.user?.firstName?.charAt(0) || 'M'}
+            <BlurView intensity={20} tint="dark" style={styles.roomCard}>
+              <View style={styles.roomIcon}>
+                <Text style={styles.roomIconText}>
+                  {item.merchant?.bussinessName?.charAt(0) || 
+                   item.merchant?.user?.firstName?.charAt(0) || 'M'}
+                </Text>
+              </View>
+              <View style={styles.roomInfo}>
+                <Text style={styles.roomName}>
+                  {item.merchant?.bussinessName || 
+                   `${item.merchant?.user?.firstName || ''} ${item.merchant?.user?.lastName || ''}`.trim() || 
+                   'Merchant'}
+                </Text>
+                <Text style={styles.roomSubtext}>Load: {item.load?.location || 'Unknown'}</Text>
+              </View>
+              <Text style={styles.roomDate}>
+                {new Date(item.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
               </Text>
-            </View>
-            <View style={styles.roomInfo}>
-              <Text style={styles.roomName}>
-                {item.merchant?.bussinessName || 
-                 `${item.merchant?.user?.firstName || ''} ${item.merchant?.user?.lastName || ''}`.trim() || 
-                 'Merchant'}
-              </Text>
-              <Text style={styles.roomSubtext}>Load: {item.load?.location || 'Unknown'}</Text>
-            </View>
-            <Text style={styles.roomDate}>{new Date(item.updatedAt).toLocaleDateString()}</Text>
+            </BlurView>
           </Pressable>
         )}
         ListEmptyComponent={
@@ -78,42 +88,48 @@ export default function ChatList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#161412',
   },
   header: {
-    padding: 16,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: 24,
     paddingTop: 60,
+    backgroundColor: '#161412',
   },
   title: {
-    flex: 1,
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: '700',
-    color: '#111827',
+    color: '#fff',
+    letterSpacing: -0.5,
+  },
+  listContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 100,
+    gap: 16,
   },
   roomItem: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  roomCard: {
     flexDirection: 'row',
     padding: 16,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 20,
   },
   roomIcon: {
     width: 54,
     height: 54,
     borderRadius: 27,
-    backgroundColor: '#E0E7FF',
+    backgroundColor: 'rgba(255, 100, 47, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
   roomIconText: {
-    color: '#4F46E5',
+    color: '#ff642f',
     fontSize: 22,
     fontWeight: '700',
   },
@@ -123,16 +139,17 @@ const styles = StyleSheet.create({
   roomName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
+    color: '#fff',
+    marginBottom: 4,
   },
   roomSubtext: {
     fontSize: 14,
-    color: '#6B7280',
-    marginTop: 2,
+    color: 'rgba(255,255,255,0.6)',
   },
   roomDate: {
     fontSize: 12,
-    color: '#9CA3AF',
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.4)',
   },
   emptyState: {
     flex: 1,
@@ -144,12 +161,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#374151',
+    color: '#fff',
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
   },
 });

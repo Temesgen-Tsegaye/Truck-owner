@@ -1,20 +1,22 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from "react-native";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ShipmentItem } from "@/query/shipments";
-import { CustomButton } from "@/components/global/button";
+import { useAppTheme } from "@/context/theme-context";
+import { Colors, Fonts } from "@/constants/theme";
 
 type Props = {
   shipment: ShipmentItem;
   onPress?: () => void;
-  onTrack?: () => void;
 };
 
-export function ShipmentCard({ shipment, onPress, onTrack }: Props) {
+export function ShipmentCard({ shipment, onPress }: Props) {
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 768;
-  const lowerStatus = shipment.status.toLowerCase();
-  const isActive = ["accepted", "in_progress", "in transit", "in_transit"].includes(lowerStatus);
+  const { isDarkMode } = useAppTheme();
+  const theme = Colors[isDarkMode ? "dark" : "light"];
 
   const getStatusConfig = (status: string) => {
     const lowerStatus = status.toLowerCase();
@@ -24,7 +26,7 @@ export function ShipmentCard({ shipment, onPress, onTrack }: Props) {
         color: "#F59E0B",
         icon: "time-outline",
         label: "Pending",
-        bgColor: "#FEF3C7"
+        bgColor: isDarkMode ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7"
       };
     }
     if (["accepted", "in_progress", "in transit"].includes(lowerStatus)) {
@@ -32,7 +34,7 @@ export function ShipmentCard({ shipment, onPress, onTrack }: Props) {
         color: "#3B82F6",
         icon: "car-outline",
         label: "In Transit",
-        bgColor: "#DBEAFE"
+        bgColor: isDarkMode ? "rgba(59, 130, 246, 0.15)" : "#DBEAFE"
       };
     }
     if (["completed", "delivered"].includes(lowerStatus)) {
@@ -40,7 +42,7 @@ export function ShipmentCard({ shipment, onPress, onTrack }: Props) {
         color: "#10B981",
         icon: "checkmark-circle-outline",
         label: "Delivered",
-        bgColor: "#D1FAE5"
+        bgColor: isDarkMode ? "rgba(16, 185, 129, 0.15)" : "#D1FAE5"
       };
     }
     if (["cancelled", "rejected"].includes(lowerStatus)) {
@@ -48,15 +50,15 @@ export function ShipmentCard({ shipment, onPress, onTrack }: Props) {
         color: "#EF4444",
         icon: "close-circle-outline",
         label: "Cancelled",
-        bgColor: "#FEE2E2"
+        bgColor: isDarkMode ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2"
       };
     }
 
     return {
-      color: "#6B7280",
+      color: theme.subtext,
       icon: "help-circle-outline",
       label: status,
-      bgColor: "#F3F4F6"
+      bgColor: isDarkMode ? "rgba(156, 163, 175, 0.15)" : "#F3F4F6"
     };
   };
 
@@ -66,98 +68,128 @@ export function ShipmentCard({ shipment, onPress, onTrack }: Props) {
 
   return (
     <TouchableOpacity
-      style={[styles.card, { padding: isLargeScreen ? 24 : 16 }]}
+      style={styles.cardShell}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      {/* Status badge */}
-      <View style={styles.header}>
-        <View style={[styles.statusBadge, { backgroundColor: statusConfig.bgColor }]}>
-          <Ionicons name={statusConfig.icon as any} size={12} color={statusConfig.color} />
-          <Text style={[styles.statusText, { color: statusConfig.color }]}>
-            {statusConfig.label}
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-      </View>
-
-      {/* Route information */}
-      <View style={styles.routeContainer}>
-        <Text style={styles.placeText}>{shipment.load.origin}</Text>
-        <Text style={styles.routeArrow}>→</Text>
-        <Text style={styles.placeText}>{shipment.load.destination}</Text>
-      </View>
-
-      {/* Details grid */}
-      <View style={styles.detailsGrid}>
-        <View style={styles.detailItem}>
-          <Ionicons name="calendar-outline" size={16} color="#6B7280" />
-          <Text style={styles.detailLabel}>Delivery</Text>
-          <Text style={[
-            styles.detailValue,
-            isPastDue && styles.pastDueText
-          ]}>
-            {deliveryDate.toLocaleDateString()}
-            {isPastDue && " ⚠️"}
-          </Text>
-        </View>
-
-        {shipment.vehicle && (
-          <View style={styles.detailItem}>
-            <Ionicons name="car-outline" size={16} color="#6B7280" />
-            <Text style={styles.detailLabel}>Vehicle</Text>
-            <Text style={styles.detailValue}>
-              {shipment.vehicle.licensePlate}
-            </Text>
-          </View>
-        )}
-
-        {shipment.load.weight && (
-          <View style={styles.detailItem}>
-            <Ionicons name="scale-outline" size={16} color="#6B7280" />
-            <Text style={styles.detailLabel}>Weight</Text>
-            <Text style={styles.detailValue}>{shipment.load.weight} kg</Text>
-          </View>
-        )}
-      </View>
-
-
-
-      {/* Footer with timestamp */}
-      <View style={styles.footer}>
-        <Text style={styles.timestamp}>
-          Created {new Date(shipment.createdAt).toLocaleDateString()}
-        </Text>
-        {shipment.driver && (
-          <Text style={styles.driverText}>
-            Driver: {shipment.driver.user.firstName || "Assigned"}
-          </Text>
-        )}
-      </View>
-
-      {isActive && onTrack && (
-        <CustomButton
-          title="Track Shipment"
-          onPress={onTrack}
-          style={styles.trackButton}
+      <BlurView intensity={20} tint="dark" style={styles.card}>
+        <LinearGradient
+          colors={[
+            "rgba(74, 63, 57, 0.92)",
+            "rgba(54, 48, 44, 0.88)",
+            "rgba(42, 36, 33, 0.84)",
+          ]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
         />
-      )}
+        <LinearGradient
+          pointerEvents="none"
+          colors={["rgba(255,255,255,0.12)", "rgba(255,255,255,0.03)", "rgba(255,255,255,0)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0.9, y: 1 }}
+          style={styles.highlightMask}
+        />
+
+        <View style={[styles.content, { padding: isLargeScreen ? 24 : 20 }]}>
+          <View style={styles.header}>
+            <View style={[styles.statusBadge, { backgroundColor: statusConfig.bgColor }] }>
+              <Ionicons name={statusConfig.icon as any} size={14} color={statusConfig.color} />
+              <Text style={[styles.statusText, { color: statusConfig.color }] }>
+                {statusConfig.label}
+              </Text>
+            </View>
+            <View style={styles.idBadge}>
+              <Text style={styles.idText}>
+                #{shipment.id.slice(-6)}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.routeContainer}>
+            <View style={styles.routePoint}>
+              <View style={[styles.dot, { backgroundColor: '#6fb0ff' }]} />
+              <Text style={styles.placeText} numberOfLines={1}>{shipment.load.origin}</Text>
+            </View>
+            <Ionicons name="arrow-forward" size={16} color="#b9aba3" style={styles.routeArrow} />
+            <View style={styles.routePoint}>
+              <View style={[styles.dot, { backgroundColor: '#79c79a' }]} />
+              <Text style={styles.placeText} numberOfLines={1}>{shipment.load.destination}</Text>
+            </View>
+          </View>
+
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailItem}>
+              <Ionicons name="calendar-outline" size={16} color="#c7b9b0" />
+              <View>
+                <Text style={styles.detailLabel}>Delivery</Text>
+                <Text style={[styles.detailValue, { color: isPastDue ? '#ff8f7a' : '#fff6f0' }] }>
+                  {deliveryDate.toLocaleDateString()}
+                  {isPastDue && "  late"}
+                </Text>
+              </View>
+            </View>
+
+            {shipment.vehicle && (
+              <View style={styles.detailItem}>
+                <Ionicons name="car-outline" size={16} color="#c7b9b0" />
+                <View>
+                  <Text style={styles.detailLabel}>Vehicle</Text>
+                  <Text style={styles.detailValue}>
+                    {shipment.vehicle.licensePlate}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.footer}>
+            <View style={styles.footerLeft}>
+              <Ionicons name="cube-outline" size={14} color="#b9aba3" />
+              <Text style={styles.footerText}>
+                {shipment.load.weight} kg
+              </Text>
+            </View>
+            {shipment.driver ? (
+              <View style={styles.footerRight}>
+                <Ionicons name="person-outline" size={14} color="#b9aba3" />
+                <Text style={styles.footerText}>
+                  {shipment.driver.user.firstName || "Assigned"}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.footerText}>Unassigned</Text>
+            )}
+          </View>
+        </View>
+      </BlurView>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+  cardShell: {
+    borderRadius: 28,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(62, 53, 48, 0.18)',
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 7,
+  },
+  card: {
+    borderRadius: 28,
+    overflow: 'hidden',
+  },
+  highlightMask: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.9,
+  },
+  content: {
+    gap: 0,
   },
   header: {
     flexDirection: "row",
@@ -168,83 +200,113 @@ const styles = StyleSheet.create({
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    gap: 6,
   },
   statusText: {
+    fontFamily: Fonts.semiBold,
     fontSize: 12,
-    fontWeight: "600",
     textTransform: "uppercase",
+    letterSpacing: 0.7,
+  },
+  idBadge: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  idText: {
+    fontFamily: Fonts.medium,
+    fontSize: 12,
+    color: '#d4c7c0',
+    letterSpacing: 0.5,
   },
   routeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-    padding: 12,
-    backgroundColor: "#F9FAFB",
-    borderRadius: 12,
+    justifyContent: "space-between",
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  routePoint: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
     gap: 8,
   },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
   placeText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
+    fontFamily: Fonts.semiBold,
+    fontSize: 15,
+    color: '#fff6f0',
+    letterSpacing: -0.3,
   },
   routeArrow: {
-    fontSize: 16,
-    color: "#6B7280",
-    fontWeight: "600",
+    marginHorizontal: 8,
+    opacity: 0.75,
   },
   detailsGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
+    gap: 12,
     marginBottom: 16,
   },
   detailItem: {
     flex: 1,
-    minWidth: "45%",
-    backgroundColor: "#F9FAFB",
+    flexDirection: "row",
+    alignItems: "center",
     padding: 12,
-    borderRadius: 10,
-    gap: 4,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    gap: 10,
   },
   detailLabel: {
+    fontFamily: Fonts.medium,
     fontSize: 11,
-    color: "#6B7280",
+    color: '#b4a6a0',
     textTransform: "uppercase",
-    fontWeight: "500",
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   detailValue: {
+    fontFamily: Fonts.semiBold,
     fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
+    color: '#fff6f0',
   },
-  pastDueText: {
-    color: "#DC2626",
-  },
-
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 12,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
+    borderTopColor: 'rgba(255,255,255,0.07)',
   },
-  timestamp: {
-    fontSize: 12,
-    color: "#9CA3AF",
+  footerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  driverText: {
-    fontSize: 12,
-    color: "#6B7280",
-    fontWeight: "500",
+  footerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  trackButton: {
-    marginTop: 16,
+  footerText: {
+    fontFamily: Fonts.medium,
+    fontSize: 13,
+    color: '#b9aba3',
   },
 });

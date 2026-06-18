@@ -12,19 +12,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import * as Linking from "expo-linking";
-import { useRouter } from "expo-router";
 import { useSession } from "@/context/auth-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Fonts } from "@/constants/theme";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { api } from "@/lib/api";
 
 const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground);
 
 export default function WelcomeScreen() {
   const { signIn } = useSession();
-  const router = useRouter();
   const [showWebView, setShowWebView] = useState(false);
+  const [isLoggingInWithTestUser, setIsLoggingInWithTestUser] = useState(false);
+  const isTestEnv = process.env.EXPO_PUBLIC_APP_ENV === "test";
 
   useEffect(() => {
     // Handle deep link when app is already open or opened from cold start
@@ -47,7 +48,25 @@ export default function WelcomeScreen() {
     };
   }, []);
 
-  const handleTelegramLogin = () => {
+  const handleTelegramLogin = async () => {
+    if (isTestEnv) {
+      try {
+        setIsLoggingInWithTestUser(true);
+        const response = await api.get('/authentication/mobile/test-login/vehicleOwner');
+        const accessToken = response?.data?.accessToken;
+
+        if (typeof accessToken === 'string' && accessToken.length > 0) {
+          signIn(accessToken);
+          return;
+        }
+      } catch (error) {
+        console.error('Test login failed for truck-owner app:', error);
+      } finally {
+        setIsLoggingInWithTestUser(false);
+      }
+      return; // Stop here in test env, don't open webview
+    }
+
     setShowWebView(true);
   };
 
@@ -128,12 +147,17 @@ export default function WelcomeScreen() {
                 style={styles.button} 
                 onPress={handleTelegramLogin}
                 activeOpacity={0.8}
+                disabled={isLoggingInWithTestUser}
               >
                 <View style={styles.actionCircle}>
                   <Ionicons name="paper-plane" size={24} color="#fff" />
                 </View>
                 
-                <Text style={styles.buttonText}>Sign in with Telegram</Text>
+                <Text style={styles.buttonText}>
+                  {isTestEnv
+                    ? (isLoggingInWithTestUser ? 'Signing in as test user...' : 'Continue as Test User')
+                    : 'Sign in with Telegram'}
+                </Text>
                 
                 <View style={styles.arrowsContainer}>
                   <Ionicons name="chevron-forward" size={16} color="#fff" style={{ opacity: 0.3 }} />

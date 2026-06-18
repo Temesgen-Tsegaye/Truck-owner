@@ -29,7 +29,7 @@ export function ShipmentCard({ shipment, onPress }: Props) {
         bgColor: isDarkMode ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7"
       };
     }
-    if (["accepted", "in_progress", "in transit"].includes(lowerStatus)) {
+    if (["accepted", "in_progress", "in_transit", "in transit"].includes(lowerStatus)) {
       return {
         color: "#3B82F6",
         icon: "car-outline",
@@ -108,13 +108,13 @@ export function ShipmentCard({ shipment, onPress }: Props) {
 
           <View style={styles.routeContainer}>
             <View style={styles.routePoint}>
-              <View style={[styles.dot, { backgroundColor: '#6fb0ff' }]} />
-              <Text style={styles.placeText} numberOfLines={1}>{shipment.load.origin}</Text>
+              <Ionicons name="location-outline" size={16} color="#6fb0ff" />
+              <Text style={styles.placeText} numberOfLines={1}>{shipment.load.startingPlace || 'Pickup'}</Text>
             </View>
             <Ionicons name="arrow-forward" size={16} color="#b9aba3" style={styles.routeArrow} />
             <View style={styles.routePoint}>
-              <View style={[styles.dot, { backgroundColor: '#79c79a' }]} />
-              <Text style={styles.placeText} numberOfLines={1}>{shipment.load.destination}</Text>
+              <Ionicons name="flag-outline" size={16} color="#79c79a" />
+              <Text style={styles.placeText} numberOfLines={1}>{shipment.load.destinationPlace || 'Delivery'}</Text>
             </View>
           </View>
 
@@ -158,7 +158,10 @@ export function ShipmentCard({ shipment, onPress }: Props) {
                 </Text>
               </View>
             ) : (
-              <Text style={styles.footerText}>Unassigned</Text>
+              <View style={styles.footerRight}>
+                <Ionicons name="person-outline" size={14} color="rgba(255,255,255,0.3)" />
+                <Text style={[styles.footerText, { color: 'rgba(255,255,255,0.35)' }]}>Unassigned</Text>
+              </View>
             )}
           </View>
         </View>

@@ -14,10 +14,20 @@ export const vehicleTypeValues = [
 export const createVehicleSchema = z.object({
   vehicleType: z.enum(vehicleTypeValues),
   licensePlate: z.string().min(1, "License plate is required"),
-  capacity: z.number().positive("Capacity must be positive"),
+  capacity: z.coerce.number().positive("Capacity must be positive"),
+  carImage: z.string().optional(),
+});
+
+export const updateVehicleSchema = z.object({
+  vehicleType: z.enum(vehicleTypeValues).optional(),
+  licensePlate: z.string().min(1, "License plate is required").optional(),
+  capacity: z.coerce.number().positive("Capacity must be positive").optional(),
+  carImage: z.string().optional(),
+  driverId: z.string().uuid().nullable().optional(),
 });
 
 export type CreateVehicleInput = z.infer<typeof createVehicleSchema>;
+export type UpdateVehicleInput = z.infer<typeof updateVehicleSchema>;
 export type VehicleType = (typeof vehicleTypeValues)[number];
 
 export type DriverInfo = {
@@ -38,6 +48,7 @@ export type VehicleItem = {
   vehicleType: VehicleType;
   licensePlate: string;
   capacity: number;
+  carImage?: string;
   createdAt: string;
   driverId: string | null;
   driver: DriverInfo | null;

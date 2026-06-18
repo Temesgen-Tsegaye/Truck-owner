@@ -1,5 +1,5 @@
 import { Tabs, useRouter, usePathname } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { View, Pressable, Platform, StyleSheet } from "react-native";
 
 /**
@@ -76,16 +76,24 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="vehicle"
+        options={{
+          title: "Vehicles",
+          tabBarIcon: ({ focused }) =>
+            focused ? (
+              <View style={styles.activeIconContainer}>
+                <MaterialCommunityIcons name="truck" size={20} color="#fff" />
+              </View>
+            ) : (
+              <MaterialCommunityIcons name="truck-outline" size={22} color="#8c8c8c" />
+            ),
+        }}
+      />
+      <Tabs.Screen
         name="chat"
         options={{
           title: "Chat",
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} iconName="message-circle" />,
-        }}
-      />
-      <Tabs.Screen
-        name="truck-owners"
-        options={{
-          href: null,
         }}
       />
       <Tabs.Screen
@@ -109,20 +117,10 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   tabBar: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 30 : 20,
-    left: 20,
-    right: 20,
     height: 70,
-    backgroundColor: '#23201d', // Dark tab bar matching the aesthetics
-    borderRadius: 35,
+    backgroundColor: '#23201d',
     borderTopWidth: 0,
-    paddingBottom: 0, // Prevent default safe-area padding from pushing icons up
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+    paddingBottom: 0,
   },
   tabIcon: {
     marginTop: 0,

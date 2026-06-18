@@ -1,258 +1,245 @@
 import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from 'expo-blur';
+
+type AgreementStatus = "PENDING" | "AGREED" | "NOT_AGREED";
 
 type Props = {
   agreement: {
-    merchantAgreed: boolean;
-    vehicleOwnerAgreed: boolean;
-    vehicleId?: string;
+    merchantStatus: AgreementStatus;
+    vehicleOwnerStatus: AgreementStatus;
     vehicle?: {
       licensePlate: string;
       vehicleType: string;
     };
   } | null;
   userType: "merchant" | "vehicleOwner";
-  onToggleAgreement: () => void;
+  onAgree: () => void;
+  onReject: () => void;
   onChangeVehicle?: () => void;
   isVehicleOwner?: boolean;
   isLoading?: boolean;
 };
 
-export function FloatingAgreementBar({ 
-  agreement, 
-  userType, 
-  onToggleAgreement,
+const statusMeta: Record<AgreementStatus, { icon: any; color: string; label: string }> = {
+  PENDING:     { icon: "time-outline", color: "#F59E0B", label: "Pending" },
+  AGREED:      { icon: "checkmark-circle", color: "#10B981", label: "Agreed" },
+  NOT_AGREED:  { icon: "close-circle", color: "#EF4444", label: "Rejected" },
+};
+
+function StatusBadge({ status }: { status: AgreementStatus }) {
+  const m = statusMeta[status];
+  return (
+    <View style={[styles.statusBadge, { borderColor: m.color }]}>
+      <Ionicons name={m.icon} size={14} color={m.color} />
+      <Text style={[styles.statusBadgeText, { color: m.color }]}>{m.label}</Text>
+    </View>
+  );
+}
+
+export function FloatingAgreementBar({
+  agreement,
+  userType,
+  onAgree,
+  onReject,
   onChangeVehicle,
   isVehicleOwner = false,
-  isLoading = false
+  isLoading = false,
 }: Props) {
   if (isLoading) {
     return (
-      <BlurView intensity={20} tint="dark" style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading agreement status...</Text>
-        </View>
-      </BlurView>
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>Loading agreement...</Text>
+      </View>
     );
   }
 
-  if (!agreement) {
-    return null;
-  }
+  if (!agreement) return null;
 
   const isMerchant = userType === "merchant";
-  const currentUserAgreed = isMerchant ? agreement.merchantAgreed : agreement.vehicleOwnerAgreed;
-  const otherPartyAgreed = isMerchant ? agreement.vehicleOwnerAgreed : agreement.merchantAgreed;
-  const otherPartyLabel = isMerchant ? "Vehicle Owner" : "Merchant";
-  
-  // Determine if both parties have agreed
-  const bothAgreed = agreement.merchantAgreed && agreement.vehicleOwnerAgreed;
+  const myStatus = isMerchant ? agreement.merchantStatus : agreement.vehicleOwnerStatus;
+  const theirStatus = isMerchant ? agreement.vehicleOwnerStatus : agreement.merchantStatus;
+  const theirLabel = isMerchant ? "Truck Owner" : "Merchant";
+  const bothAgreed = agreement.merchantStatus === "AGREED" && agreement.vehicleOwnerStatus === "AGREED";
+  const canAct = myStatus === "PENDING";
 
   return (
-    <BlurView intensity={25} tint="dark" style={styles.container}>
-      {/* Status Bar */}
-      <View style={styles.statusBar}>
-        {/* Current User Status */}
-        <View style={styles.statusItem}>
-          <Text style={styles.statusLabel}>You:</Text>
-          <View style={styles.statusIndicator}>
-            <Ionicons 
-              name={currentUserAgreed ? "checkmark-circle" : "close-circle"} 
-              size={16} 
-              color={currentUserAgreed ? "#10B981" : "#EF4444"} 
-            />
-            <Text style={[
-              styles.statusText,
-              { color: currentUserAgreed ? "#10B981" : "#EF4444" }
-            ]}>
-              {currentUserAgreed ? "Agreed" : "Not Agreed"}
-            </Text>
+    <View style={styles.container}>
+      <View style={styles.topRow}>
+        <View style={styles.parties}>
+          <View style={styles.party}>
+            <Text style={styles.partyLabel}>You</Text>
+            <StatusBadge status={myStatus} />
+          </View>
+          <View style={styles.party}>
+            <Text style={styles.partyLabel}>{theirLabel}</Text>
+            <StatusBadge status={theirStatus} />
           </View>
         </View>
-
-        {/* Other Party Status */}
-        <View style={styles.statusItem}>
-          <Text style={styles.statusLabel}>{otherPartyLabel}:</Text>
-          <View style={styles.statusIndicator}>
-            <Ionicons 
-              name={otherPartyAgreed ? "checkmark-circle" : "close-circle"} 
-              size={16} 
-              color={otherPartyAgreed ? "#10B981" : "rgba(255,255,255,0.4)"} 
-            />
-            <Text style={[
-              styles.statusText,
-              { color: otherPartyAgreed ? "#10B981" : "rgba(255,255,255,0.4)" }
-            ]}>
-              {otherPartyAgreed ? "Agreed" : "Not Agreed"}
-            </Text>
-          </View>
-        </View>
-
-        {/* Vehicle Info (for Truck Owner) */}
-        {isVehicleOwner && agreement.vehicle && (
-          <View style={styles.vehicleInfo}>
-            <Ionicons name="car-outline" size={14} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.vehicleText}>
-              {agreement.vehicle.licensePlate} • {agreement.vehicle.vehicleType}
-            </Text>
+        {agreement.vehicle && (
+          <View style={styles.vehicleChip}>
+            <Ionicons name="car-outline" size={13} color="#8c8c8c" />
+            <Text style={styles.vehicleChipText}>{agreement.vehicle.licensePlate}</Text>
           </View>
         )}
       </View>
 
-      {/* Action Buttons */}
-      <View style={styles.actionBar}>
-        {/* Toggle Agreement Button */}
-        <Pressable
-          onPress={onToggleAgreement}
-          style={[
-            styles.actionButton,
-            currentUserAgreed ? styles.agreedButton : styles.notAgreedButton
-          ]}
-        >
-          <Ionicons 
-            name={currentUserAgreed ? "checkmark" : "hand-right"} 
-            size={16} 
-            color="#FFFFFF" 
-          />
-          <Text style={styles.actionButtonText}>
-            {currentUserAgreed ? "Agreed" : "Agree"}
-          </Text>
-        </Pressable>
+      {!bothAgreed && (
+        <View style={styles.actionRow}>
+          {canAct ? (
+            <>
+              <Pressable onPress={onAgree} style={[styles.btn, styles.agreeBtn]}>
+                <Ionicons name="checkmark" size={15} color="#fff" />
+                <Text style={styles.btnText}>Agree</Text>
+              </Pressable>
+              <Pressable onPress={onReject} style={[styles.btn, styles.rejectBtn]}>
+                <Ionicons name="close" size={15} color="#fff" />
+                <Text style={styles.btnText}>Reject</Text>
+              </Pressable>
+            </>
+          ) : (
+            <Pressable
+              onPress={onAgree}
+              style={[styles.btn, myStatus === "AGREED" ? styles.agreedOutlineBtn : styles.rejectedOutlineBtn]}
+            >
+              <Ionicons
+                name="swap-horizontal"
+                size={14}
+                color={myStatus === "AGREED" ? "#10B981" : "#EF4444"}
+              />
+              <Text style={[styles.btnText, { color: myStatus === "AGREED" ? "#10B981" : "#EF4444" }]}>
+                Change
+              </Text>
+            </Pressable>
+          )}
+          {isVehicleOwner && myStatus === "AGREED" && onChangeVehicle && (
+            <Pressable onPress={onChangeVehicle} style={[styles.btn, styles.vehicleBtn]}>
+              <Ionicons name="car-outline" size={14} color="#8c8c8c" />
+              <Text style={[styles.btnText, { color: "#8c8c8c" }]}>Vehicle</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
 
-        {/* Change Vehicle Button (for Truck Owner when agreed) */}
-        {isVehicleOwner && currentUserAgreed && onChangeVehicle && (
-          <Pressable
-            onPress={onChangeVehicle}
-            style={[styles.actionButton, styles.changeVehicleButton]}
-          >
-            <Ionicons name="swap-horizontal" size={16} color="#FFFFFF" />
-            <Text style={styles.actionButtonText}>Change Vehicle</Text>
-          </Pressable>
-        )}
-
-        {/* Both Agreed Status */}
-        {bothAgreed && (
-          <View style={styles.bothAgreedBadge}>
-            <Ionicons name="checkmark-done" size={16} color="#FFFFFF" />
-            <Text style={styles.bothAgreedText}>Ready to Ship!</Text>
-          </View>
-        )}
-      </View>
-    </BlurView>
+      {bothAgreed && (
+        <View style={styles.shippedBanner}>
+          <Ionicons name="checkmark-done-circle" size={16} color="#10B981" />
+          <Text style={styles.shippedBannerText}>Shipment created!</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 20,
-    margin: 12,
-    padding: 16,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 14,
+    marginHorizontal: 12,
+    marginBottom: 8,
+    padding: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    overflow: 'hidden',
-  },
-  loadingContainer: {
-    alignItems: "center",
-    paddingVertical: 16,
+    borderColor: "rgba(255,255,255,0.07)",
   },
   loadingText: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.6)",
-    fontWeight: "500",
+    color: "rgba(255,255,255,0.4)",
+    fontSize: 13,
+    textAlign: "center",
   },
-  statusBar: {
+  topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
-    flexWrap: "wrap",
-    gap: 8,
+    marginBottom: 8,
   },
-  statusItem: {
+  parties: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  party: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
   },
-  statusLabel: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.6)",
-    fontWeight: "500",
-  },
-  statusIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  statusText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  vehicleInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 50,
-  },
-  vehicleText: {
+  partyLabel: {
     fontSize: 12,
-    color: "#fff",
-    fontWeight: "600",
+    color: "rgba(255,255,255,0.5)",
   },
-  actionBar: {
+  statusBadge: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  vehicleChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  vehicleChipText: {
+    fontSize: 11,
+    color: "rgba(255,255,255,0.6)",
+  },
+  actionRow: {
+    flexDirection: "row",
     gap: 8,
-    flexWrap: "wrap",
   },
-  actionButton: {
+  btn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 50,
-    minWidth: 90,
-    justifyContent: "center",
-  },
-  notAgreedButton: {
-    backgroundColor: "#10B981",
-  },
-  agreedButton: {
-    backgroundColor: "rgba(16, 185, 129, 0.2)",
-    borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.4)",
-  },
-  changeVehicleButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-  },
-  actionButtonText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  bothAgreedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(139, 92, 246, 0.2)",
-    borderWidth: 1,
-    borderColor: "rgba(139, 92, 246, 0.4)",
+    gap: 5,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 50,
-    marginLeft: "auto",
+    borderRadius: 20,
   },
-  bothAgreedText: {
-    color: "#A78BFA",
-    fontSize: 13,
+  agreeBtn: {
+    backgroundColor: "#10B981",
+  },
+  rejectBtn: {
+    backgroundColor: "rgba(239, 68, 68, 0.7)",
+  },
+  agreedOutlineBtn: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.3)",
+  },
+  rejectedOutlineBtn: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+  },
+  vehicleBtn: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  btnText: {
+    color: "#fff",
+    fontSize: 12,
     fontWeight: "600",
+  },
+  shippedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    alignSelf: "flex-start",
+  },
+  shippedBannerText: {
+    color: "#10B981",
+    fontSize: 12,
+    fontWeight: "700",
   },
 });

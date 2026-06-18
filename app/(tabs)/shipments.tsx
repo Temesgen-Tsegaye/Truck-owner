@@ -46,7 +46,7 @@ export default function Shipments() {
 
   const activeCount = shipmentList.filter((shipment) => {
     const status = shipment.status.toLowerCase();
-    return ["accepted", "in_progress", "in transit", "pending", "created"].includes(status);
+    return ["accepted", "in_progress", "in_transit", "in transit", "pending", "created"].includes(status);
   }).length;
 
   const deliveredCount = shipmentList.filter((shipment) => {
@@ -62,7 +62,7 @@ export default function Shipments() {
           <Text style={styles.pageTitle}>My Shipments</Text>
           <Text style={styles.pageSubtitle}>Track and manage active deliveries.</Text>
         </View>
-        <TouchableOpacity style={styles.notificationBtn}>
+        <TouchableOpacity style={styles.notificationBtn} onPress={() => router.push('/notifications')}>
           <View style={styles.notificationDot} />
           <Ionicons name="notifications-outline" size={22} color="#fff" />
         </TouchableOpacity>

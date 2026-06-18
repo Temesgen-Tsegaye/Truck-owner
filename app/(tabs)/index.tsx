@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useLoadsQuery } from "@/query/loads";
 import { LoadCard } from "@/components/loads/load-card";
 import { useAppTheme } from "@/context/theme-context";
@@ -19,6 +20,7 @@ import { Colors, Fonts } from "@/constants/theme";
 import { useProfile } from "@/query/profile/profile-query";
 
 export default function Dashboard() {
+  const router = useRouter();
   const { data, isLoading } = useLoadsQuery();
   const { data: profile } = useProfile();
   const { isDarkMode } = useAppTheme();
@@ -27,19 +29,29 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const firstName = profile?.firstName?.trim() || 'there';
 
+  const profilePicUri = (() => {
+    const pic = profile?.profilePicture;
+    if (!pic) return 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80';
+    if (pic.startsWith('http') || pic.startsWith('data:')) return pic;
+    const api = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000';
+    return `${api}${pic}`;
+  })();
+
   const renderHeader = () => (
     <View style={styles.headerWrapper}>
       {/* Header Section */}
       <View style={styles.header}>
-        <Image 
-          source={{ uri: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' }} 
-          style={styles.profilePic} 
-        />
+        <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
+          <Image 
+            source={{ uri: profilePicUri }} 
+            style={styles.profilePic} 
+          />
+        </TouchableOpacity>
         <View style={styles.headerTextContainer}>
           <Text style={styles.greetingText}>Welcome {firstName}</Text>
           <Text style={styles.userName}>Truck Owner</Text>
         </View>
-        <TouchableOpacity style={styles.notificationBtn}>
+        <TouchableOpacity style={styles.notificationBtn} onPress={() => router.push('/notifications')}>
           <View style={styles.notificationDot} />
           <Ionicons name="notifications-outline" size={22} color="#fff" />
         </TouchableOpacity>

@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import { CreateVehicleInput, VehicleItem } from "@/lib/vehicle-schemas";
+import { CreateVehicleInput, UpdateVehicleInput, VehicleItem } from "@/lib/vehicle-schemas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
 import axios from "axios";
@@ -37,6 +37,35 @@ export const useCreateVehicleMutation = () => {
       Toast.show({
         type: "error",
         text1: "Failed to add truck",
+        text2: message,
+      });
+    },
+  });
+};
+
+export const useUpdateVehicleMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateVehicleInput }) =>
+      api.patch(`/vehicles/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+      Toast.show({
+        type: "success",
+        text1: "Truck updated",
+        text2: "Your truck has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      const message = axios.isAxiosError(error)
+        ? (error.response?.data as { message?: string })?.message ||
+          error.message
+        : "Something went wrong";
+
+      Toast.show({
+        type: "error",
+        text1: "Failed to update truck",
         text2: message,
       });
     },

@@ -184,22 +184,7 @@ export default function ChatRoom() {
     setSending(true);
 
     try {
-      // Send via socket for real-time
       socket?.emit("send_message", { roomId, content: text });
-
-      // Also send via HTTP POST to ensure persistence
-      const response = await api.post(`/chat/room/${roomId}/messages`, {
-        content: text,
-      });
-
-      // If response contains the saved message, update optimistic message
-      if (response.data && response.data.id) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.tempId === tempId ? { ...response.data, isOptimistic: false } : m,
-          ),
-        );
-      }
     } catch (error) {
       console.error("Failed to send message:", error);
       // Optionally remove optimistic message on error
@@ -209,11 +194,11 @@ export default function ChatRoom() {
     }
   };
 
-  const sendAgreementUpdate = async (agreed: boolean, vehicleId?: string) => {
+  const sendAgreementUpdate = async (status: string, vehicleId?: string) => {
     try {
       const payload: any = {
         chatRoomId: roomId,
-        agreed,
+        status,
       };
       if (vehicleId) {
         payload.vehicleId = vehicleId;
@@ -236,33 +221,25 @@ export default function ChatRoom() {
     }
   };
 
-  const handleToggleAgreement = async () => {
-    const currentlyAgreed = agreement?.vehicleOwnerAgreed;
-    
-    // If toggling off (disagreeing), just send update
-    if (currentlyAgreed) {
-      await sendAgreementUpdate(false);
-      return;
-    }
-    
-    // If agreeing, handle vehicle selection
+  const handleAgree = async () => {
     if (hasMultipleVehicles) {
-      // Show vehicle picker modal
       setShowVehiclePicker(true);
     } else if (hasSingleVehicle) {
-      // Auto-select the single vehicle and agree
       const vehicleId = vehicles[0].id;
-      await sendAgreementUpdate(true, vehicleId);
+      await sendAgreementUpdate("AGREED", vehicleId);
     } else {
-      // No vehicles - backend will handle error
-      await sendAgreementUpdate(true);
+      await sendAgreementUpdate("AGREED");
     }
+  };
+
+  const handleReject = async () => {
+    await sendAgreementUpdate("NOT_AGREED");
   };
 
   const handleVehicleSelect = async (vehicleId: string) => {
     setSelectedVehicleId(vehicleId);
     setShowVehiclePicker(false);
-    await sendAgreementUpdate(true, vehicleId);
+    await sendAgreementUpdate("AGREED", vehicleId);
   };
 
   return (
@@ -280,6 +257,7 @@ export default function ChatRoom() {
         </View>
 
         <FlatList
+          style={{ flex: 1 }}
           data={messages}
           keyExtractor={(item) => item.id || Math.random().toString()}
           renderItem={({ item }) => (
@@ -312,13 +290,16 @@ export default function ChatRoom() {
                 } : undefined
               }}
               userType="vehicleOwner"
-              onToggleAgreement={handleToggleAgreement}
+              onAgree={handleAgree}
+              onReject={handleReject}
               onChangeVehicle={() => setShowVehiclePicker(true)}
               isVehicleOwner={true}
               isLoading={loadingAgreement}
             />
-          }
-        />
+        }
+        ListFooterComponent={<View style={{ height: 16 }} />}
+        contentInset={{ bottom: 16 }}
+      />
 
         <Modal
           visible={showVehiclePicker}
@@ -421,6 +402,7 @@ const styles = StyleSheet.create({
   },
   messageList: {
     padding: 16,
+    paddingBottom: 20,
   },
   messageBubble: {
     maxWidth: "80%",

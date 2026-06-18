@@ -28,6 +28,7 @@ export interface UserProfileResponse {
   phoneNumber?: string;
   firstName?: string;
   lastName?: string;
+  profilePicture?: string;
   phoneVerified: boolean;
   telegramId?: string;
   telegramUsername?: string;
@@ -42,6 +43,7 @@ export interface UpdateBaseProfileInput {
   firstName?: string;
   lastName?: string;
   pin?: string;
+  profilePicture?: string;
 }
 
 export interface UpdateMerchantInput {

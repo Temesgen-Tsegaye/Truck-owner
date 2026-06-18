@@ -1,54 +1,58 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
+import { BlurView } from 'expo-blur';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Profile</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <Pressable 
-          style={styles.menuItem}
-          onPress={() => router.push('/(tabs)/profile/edit')}
-        >
-          <BlurView intensity={20} tint="dark" style={styles.menuCard}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="person-outline" size={24} color="#ff642f" />
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={styles.menuTitle}>Edit Profile</Text>
-              <Text style={styles.menuSubtitle}>Manage your personal information</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.4)" />
-          </BlurView>
-        </Pressable>
+      <View style={styles.content}>
+        <BlurView intensity={20} tint="dark" style={styles.blurCard}>
+          <Pressable
+              style={({ pressed }) => [
+                styles.card,
+                pressed && styles.cardPressed
+              ]}
+              onPress={() => router.push('/(tabs)/profile/edit')}
+          >
+              <View style={styles.cardIconContainer}>
+                  <Ionicons name="person-circle-outline" size={24} color="#ff642f" />
+              </View>
+              <View style={styles.cardContent}>
+                  <Text style={styles.cardTitle}>Edit Profile</Text>
+                  <Text style={styles.cardDescription}>Manage your personal information</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.5)" />
+          </Pressable>
+        </BlurView>
 
-        <Pressable 
-          style={styles.menuItem}
-          onPress={() => router.push('/(tabs)/profile/settings')}
-        >
-          <BlurView intensity={20} tint="dark" style={styles.menuCard}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="settings-outline" size={24} color="#ff642f" />
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={styles.menuTitle}>Settings</Text>
-              <Text style={styles.menuSubtitle}>App preferences and account settings</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.4)" />
-          </BlurView>
-        </Pressable>
-      </ScrollView>
-    </View>
+        <BlurView intensity={20} tint="dark" style={styles.blurCard}>
+          <Pressable
+              style={({ pressed }) => [
+                styles.card,
+                pressed && styles.cardPressed
+              ]}
+              onPress={() => router.push('/(tabs)/profile/settings')}
+          >
+               <View style={styles.cardIconContainer}>
+                  <Ionicons name="settings-outline" size={24} color="#ff642f" />
+              </View>
+               <View style={styles.cardContent}>
+                  <Text style={styles.cardTitle}>Settings</Text>
+                  <Text style={styles.cardDescription}>App preferences and account settings</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.5)" />
+          </Pressable>
+        </BlurView>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -58,55 +62,53 @@ const styles = StyleSheet.create({
     backgroundColor: '#161412',
   },
   header: {
-    padding: 24,
-    paddingTop: 60,
-    backgroundColor: '#161412',
+    padding: 20,
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: '#fff',
-    letterSpacing: -0.5,
   },
   content: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     gap: 16,
-    paddingBottom: 100,
   },
-  menuItem: {
-    borderRadius: 20,
+  blurCard: {
+    borderRadius: 16,
     overflow: 'hidden',
   },
-  menuCard: {
+  card: {
     flexDirection: 'row',
-    padding: 16,
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 20,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
-  iconContainer: {
+  cardPressed: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  cardIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255, 100, 47, 0.15)',
-    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 100, 47, 0.1)',
     alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 16,
   },
-  textContainer: {
+  cardContent: {
     flex: 1,
-    justifyContent: 'center',
   },
-  menuTitle: {
+  cardTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
     marginBottom: 4,
   },
-  menuSubtitle: {
-    fontSize: 13,
+  cardDescription: {
+    fontSize: 14,
     color: 'rgba(255,255,255,0.6)',
   },
 });

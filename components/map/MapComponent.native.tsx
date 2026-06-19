@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import * as MapLibreGL from '@maplibre/maplibre-react-native';
 
@@ -29,7 +29,11 @@ export interface MapComponentProps {
 
 const DEFAULT_CENTER: [number, number] = [38.7578, 9.0320];
 const DEFAULT_ZOOM = 10;
+const USER_PAN_TIMEOUT = 3000;
 const LIGHT_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
+const LERP_DURATION = 600;
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 const MapComponent: React.FC<MapComponentProps> = ({
   followCenter = false,
@@ -39,35 +43,99 @@ const MapComponent: React.FC<MapComponentProps> = ({
 }) => {
   const mapRef = useRef<any>(null);
   const cameraRef = useRef<any>(null);
-  const [isFollowingCenter, setIsFollowingCenter] = useState(followCenter);
-  const currentZoomRef = useRef<number>(DEFAULT_ZOOM);
+  const animationFrameRef = useRef<number | null>(null);
+  const userPanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userPannedRef = useRef(false);
+  const [animatedCoords, setAnimatedCoords] = useState<Record<string, [number, number]>>({});
+  const prevCoordsRef = useRef<Record<string, [number, number]>>({});
+  const animStartRef = useRef<number>(0);
 
   useEffect(() => {
-    if (followCenter) {
-      setIsFollowingCenter(true);
+    if (markers.length === 0) return;
+
+    for (const marker of markers) {
+      const target = marker.coordinate;
+      const prev = prevCoordsRef.current[marker.id];
+      if (!prev || prev[0] !== target[0] || prev[1] !== target[1]) {
+        if (!prev) {
+          prevCoordsRef.current[marker.id] = target;
+          setAnimatedCoords((s) => ({ ...s, [marker.id]: target }));
+        } else {
+          startAnimation(marker.id, prev, target);
+        }
+        prevCoordsRef.current[marker.id] = target;
+      }
     }
-  }, [followCenter]);
+
+    if (markers.length > 0 && cameraRef.current && !userPannedRef.current) {
+      cameraRef.current.flyTo(markers[0].coordinate, 1000);
+    }
+  }, [markers, followCenter]);
+
+  const startAnimation = useCallback(
+    (id: string, from: [number, number], to: [number, number]) => {
+      animStartRef.current = 0;
+
+      const animate = (timestamp: number) => {
+        if (!animStartRef.current) animStartRef.current = timestamp;
+        const elapsed = timestamp - animStartRef.current;
+        const t = Math.min(elapsed / LERP_DURATION, 1);
+        const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+        setAnimatedCoords((s) => ({
+          ...s,
+          [id]: [lerp(from[0], to[0], eased), lerp(from[1], to[1], eased)],
+        }));
+
+        if (t < 1) {
+          animationFrameRef.current = requestAnimationFrame(animate);
+        } else {
+          animStartRef.current = 0;
+        }
+      };
+
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      animStartRef.current = 0;
+      animationFrameRef.current = requestAnimationFrame(animate);
+    },
+    [],
+  );
 
   useEffect(() => {
-    if (isFollowingCenter && markers.length > 0 && cameraRef.current) {
-      cameraRef.current.setCamera({
-        centerCoordinate: markers[0].coordinate,
-        zoomLevel: currentZoomRef.current,
-        animationDuration: 1000,
-      });
-    }
-  }, [markers, isFollowingCenter]);
+    return () => {
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (userPanTimeoutRef.current) clearTimeout(userPanTimeoutRef.current);
+    };
+  }, []);
 
-  const handleRegionChange = (event: any) => {
-    const nextZoom = event?.properties?.zoomLevel;
-    if (typeof nextZoom === 'number') {
-      currentZoomRef.current = nextZoom;
-    }
+  const handleRegionIsChanging = useCallback(
+    (event: any) => {
+      if (event?.properties?.isUserInteraction) {
+        userPannedRef.current = true;
 
-    if (event?.properties?.isUserInteraction && followCenter) {
-      setIsFollowingCenter(false);
-    }
-  };
+        if (userPanTimeoutRef.current) {
+          clearTimeout(userPanTimeoutRef.current);
+        }
+
+        userPanTimeoutRef.current = setTimeout(() => {
+          userPannedRef.current = false;
+          userPanTimeoutRef.current = null;
+
+          if (markers.length > 0 && cameraRef.current) {
+            cameraRef.current.flyTo(markers[0].coordinate, 1000);
+          }
+        }, USER_PAN_TIMEOUT);
+      }
+    },
+    [markers],
+  );
+
+  const animatedMarkers = markers.map((marker) => ({
+    ...marker,
+    coordinate: animatedCoords[marker.id] || marker.coordinate,
+  }));
 
   return (
     <View style={styles.container}>
@@ -75,9 +143,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
         ref={mapRef}
         style={styles.map}
         mapStyle={LIGHT_STYLE_URL}
-        onRegionWillChange={handleRegionChange}
-        onRegionIsChanging={handleRegionChange}
-        onRegionDidChange={handleRegionChange}
+        onRegionIsChanging={handleRegionIsChanging}
         compassEnabled={showCompass}
         compassViewPosition={1}
         compassViewMargins={compassMargins}
@@ -92,7 +158,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
           }}
           maxZoomLevel={18}
         />
-        {markers.map((marker) => (
+        {animatedMarkers.map((marker) => (
           <MapLibreGL.PointAnnotation
             key={marker.id}
             id={marker.id}

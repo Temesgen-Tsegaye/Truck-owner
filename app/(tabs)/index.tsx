@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { useLoadsQuery } from "@/query/loads";
 import { LoadCard } from "@/components/loads/load-card";
 import { useAppTheme } from "@/context/theme-context";
@@ -21,7 +22,13 @@ import { useProfile } from "@/query/profile/profile-query";
 
 export default function Dashboard() {
   const router = useRouter();
-  const { data, isLoading } = useLoadsQuery();
+  const { data, isLoading, refetch } = useLoadsQuery();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [])
+  );
   const { data: profile } = useProfile();
   const { isDarkMode } = useAppTheme();
   const theme = Colors[isDarkMode ? "dark" : "light"];
@@ -53,22 +60,22 @@ export default function Dashboard() {
         </View>
         <TouchableOpacity style={styles.notificationBtn} onPress={() => router.push('/notifications')}>
           <View style={styles.notificationDot} />
-          <Ionicons name="notifications-outline" size={22} color="#fff" />
+          <Ionicons name="notifications-outline" size={22} color={theme.text} />
         </TouchableOpacity>
       </View>
 
       {/* Search & Filter Component */}
       <View style={styles.searchContainer}>
-        <Feather name="search" size={20} color="#777" style={styles.searchIcon} />
+        <Feather name="search" size={20} color={theme.subtext} style={styles.searchIcon} />
         <TextInput 
           style={styles.searchInput}
           placeholder="Enter tracking number"
-          placeholderTextColor="#777"
+          placeholderTextColor={theme.subtext}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
         <TouchableOpacity style={styles.scanBtn}>
-          <MaterialCommunityIcons name="line-scan" size={20} color="#777" />
+          <MaterialCommunityIcons name="line-scan" size={20} color={theme.subtext} />
         </TouchableOpacity>
       </View>
 
@@ -78,9 +85,123 @@ export default function Dashboard() {
     </View>
   );
 
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    listContent: {
+      paddingHorizontal: 24,
+      paddingTop: 20,
+      paddingBottom: 120,
+    },
+    headerWrapper: {
+      marginBottom: 8,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    profilePic: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      marginRight: 16,
+    },
+    headerTextContainer: {
+      flex: 1,
+    },
+    greetingText: {
+      fontFamily: Fonts.medium,
+      fontSize: 14,
+      color: theme.subtext,
+      marginBottom: 4,
+    },
+    userName: {
+      fontFamily: Fonts.bold,
+      fontSize: 18,
+      color: theme.text,
+    },
+    notificationBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: theme.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    notificationDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: '#ff4d4d',
+      position: 'absolute',
+      top: 10,
+      right: 12,
+      zIndex: 1,
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.card,
+      borderRadius: 30,
+      paddingHorizontal: 16,
+      height: 56,
+      marginBottom: 32,
+    },
+    searchIcon: {
+      marginRight: 12,
+    },
+    searchInput: {
+      flex: 1,
+      fontFamily: Fonts.medium,
+      fontSize: 15,
+      color: theme.text,
+      height: '100%',
+    },
+    scanBtn: {
+      padding: 8,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      fontFamily: Fonts.bold,
+      fontSize: 18,
+      color: theme.text,
+    },
+    emptyState: {
+      padding: 32,
+      alignItems: "center",
+      marginTop: 40,
+      backgroundColor: theme.card,
+      borderRadius: 24,
+    },
+    emptyTitle: {
+      fontFamily: Fonts.bold,
+      fontSize: 18,
+      color: theme.text,
+      textAlign: "center",
+    },
+    emptySubtitle: {
+      marginTop: 8,
+      fontFamily: Fonts.regular,
+      fontSize: 14,
+      color: theme.subtext,
+      textAlign: "center",
+      lineHeight: 20,
+    },
+  }), [theme]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#161412" />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.background} />
       <FlatList
         data={data ?? []}
         keyExtractor={(item) => item.id}
@@ -103,116 +224,3 @@ export default function Dashboard() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#161412', // Match dark brown/black aesthetic
-  },
-  listContent: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 120,
-  },
-  headerWrapper: {
-    marginBottom: 8,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  profilePic: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 16,
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  greetingText: {
-    fontFamily: Fonts.medium,
-    fontSize: 14,
-    color: '#8c8c8c',
-    marginBottom: 4,
-  },
-  userName: {
-    fontFamily: Fonts.bold,
-    fontSize: 18,
-    color: '#fff',
-  },
-  notificationBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: '#333',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  notificationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ff4d4d',
-    position: 'absolute',
-    top: 10,
-    right: 12,
-    zIndex: 1,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#23201d',
-    borderRadius: 30,
-    paddingHorizontal: 16,
-    height: 56,
-    marginBottom: 32,
-  },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: Fonts.medium,
-    fontSize: 15,
-    color: '#fff',
-    height: '100%',
-  },
-  scanBtn: {
-    padding: 8,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 18,
-    color: '#fff',
-  },
-  emptyState: {
-    padding: 32,
-    alignItems: "center",
-    marginTop: 40,
-    backgroundColor: '#23201d',
-    borderRadius: 24,
-  },
-  emptyTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 18,
-    color: '#fff',
-    textAlign: "center",
-  },
-  emptySubtitle: {
-    marginTop: 8,
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    color: '#8c8c8c',
-    textAlign: "center",
-    lineHeight: 20,
-  },
-});

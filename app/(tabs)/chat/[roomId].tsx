@@ -17,14 +17,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { api } from "@/lib/api";
 import { FloatingAgreementBar } from "@/components/chat/floating-agreement-bar";
-import { useLocalSocket } from "@/hooks/use-local-socket";
+import { useSocket } from "@/context/socket-context";
 import { useVehiclesQuery } from "@/query/vehicles";
+import { useAppTheme } from "@/context/theme-context";
+import { Colors } from "@/constants/theme";
 import Toast from "react-native-toast-message";
 
 export default function ChatRoom() {
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const router = useRouter();
-  const { socket } = useLocalSocket();
+  const { socket, joinRoom, leaveRoom, sendMessage } = useSocket();
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -32,6 +34,8 @@ export default function ChatRoom() {
   const [loadingAgreement, setLoadingAgreement] = useState(true);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [showVehiclePicker, setShowVehiclePicker] = useState(false);
+  const { isDarkMode } = useAppTheme();
+  const colors = isDarkMode ? Colors.dark : Colors.light;
 
   const { data: vehicles = [], isLoading: vehiclesLoading } = useVehiclesQuery();
   
@@ -68,12 +72,10 @@ export default function ChatRoom() {
       const serverMessages = res.data || [];
 
       setMessages((prev) => {
-        // Keep optimistic messages that aren't already in server messages
         const optimisticMessages = prev.filter((m) => m.isOptimistic);
         const merged = [...serverMessages];
 
         optimisticMessages.forEach((optimistic) => {
-          // Check if this optimistic message already exists in server messages
           const exists = serverMessages.some(
             (serverMsg: any) =>
               serverMsg.id === optimistic.id ||
@@ -98,21 +100,18 @@ export default function ChatRoom() {
 
   useEffect(() => {
     if (roomId && socket) {
-      socket.emit("join_room", { roomId });
+      joinRoom(roomId);
       fetchMessages();
       fetchAgreement();
 
       const handleNewMessage = (msg: any) => {
-        console.log("Received socket message:", msg);
         if (msg.chatRoomId === roomId) {
           setMessages((prev) => {
-            // Check for duplicate by id or tempId
             const exists = prev.find(
               (m) => m.id === msg.id || (m.tempId && m.tempId === msg.tempId),
             );
             if (exists) return prev;
 
-            // Try to replace optimistic message by matching content and recent timestamp
             const msgTimestamp = msg.timestamp
               ? new Date(msg.timestamp).getTime()
               : Date.now();
@@ -122,11 +121,10 @@ export default function ChatRoom() {
                 m.content === msg.content &&
                 m.chatRoomId === msg.chatRoomId &&
                 Math.abs(new Date(m.timestamp).getTime() - msgTimestamp) <
-                  30000, // 30 seconds
+                  30000,
             );
 
             if (optimisticIndex !== -1) {
-              // Replace optimistic message with real one
               const newMessages = [...prev];
               newMessages[optimisticIndex] = {
                 ...msg,
@@ -160,7 +158,7 @@ export default function ChatRoom() {
       return () => {
         socket.off("receive_message", handleNewMessage);
         socket.off("agreement_updated", handleAgreementUpdate);
-        socket.emit("leave_room", { roomId });
+        leaveRoom(roomId);
       };
     }
   }, [roomId, socket, fetchAgreement, fetchMessages]);
@@ -184,11 +182,9 @@ export default function ChatRoom() {
     setSending(true);
 
     try {
-      socket?.emit("send_message", { roomId, content: text });
+      sendMessage(roomId, text);
     } catch (error) {
       console.error("Failed to send message:", error);
-      // Optionally remove optimistic message on error
-      // setMessages(prev => prev.filter(m => m.tempId !== tempId));
     } finally {
       setSending(false);
     }
@@ -243,42 +239,45 @@ export default function ChatRoom() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
         keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={20} color="#fff" />
+        <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+          <Pressable onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.overlay, borderColor: colors.border }]}>
+            <Ionicons name="chevron-back" size={20} color={colors.text} />
           </Pressable>
-          <Text style={styles.title}>Negotiation</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Negotiation</Text>
         </View>
 
         <FlatList
           style={{ flex: 1 }}
           data={messages}
           keyExtractor={(item) => item.id || Math.random().toString()}
-          renderItem={({ item }) => (
-            <View
-              style={[
-                styles.messageBubble,
-                item.vehicleOwnerId || item.tempId
-                  ? styles.myMessage
-                  : styles.theirMessage,
-              ]}
-            >
-              <Text
+          renderItem={({ item }) => {
+            const isMe = item.vehicleOwnerId || item.tempId;
+            return (
+              <View
                 style={[
-                  styles.messageText,
-                  !(item.vehicleOwnerId || item.tempId) && { color: "#FFF" },
+                  styles.messageBubble,
+                  isMe
+                    ? [styles.myMessage, { backgroundColor: colors.messageSelf }]
+                    : [styles.theirMessage, { backgroundColor: colors.messageOther }],
                 ]}
               >
-                {item.content}
-              </Text>
-            </View>
-          )}
+                <Text
+                  style={[
+                    styles.messageText,
+                    { color: isMe ? colors.textOnPrimary : colors.text },
+                  ]}
+                >
+                  {item.content}
+                </Text>
+              </View>
+            );
+          }}
           contentContainerStyle={styles.messageList}
           ListHeaderComponent={
             <FloatingAgreementBar
@@ -308,26 +307,27 @@ export default function ChatRoom() {
           onRequestClose={() => setShowVehiclePicker(false)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select a Vehicle</Text>
+            <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Select a Vehicle</Text>
               <ScrollView style={styles.vehicleList}>
                 {vehicles.map((vehicle) => (
                   <TouchableOpacity
                     key={vehicle.id}
                     style={[
                       styles.vehicleItem,
-                      selectedVehicleId === vehicle.id && styles.vehicleItemSelected,
+                      { borderBottomColor: colors.border },
+                      selectedVehicleId === vehicle.id && { backgroundColor: colors.primaryLight },
                     ]}
                     onPress={() => handleVehicleSelect(vehicle.id)}
                   >
-                    <Text style={styles.vehicleItemText}>
+                    <Text style={[styles.vehicleItemText, { color: colors.text }]}>
                       {vehicle.licensePlate} - {vehicle.vehicleType} ({vehicle.capacity} tons)
                     </Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
               <Pressable
-                style={styles.modalCancelButton}
+                style={[styles.modalCancelButton, { backgroundColor: colors.error }]}
                 onPress={() => setShowVehiclePicker(false)}
               >
                 <Text style={styles.modalCancelButtonText}>Cancel</Text>
@@ -336,12 +336,13 @@ export default function ChatRoom() {
           </View>
         </Modal>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : colors.inputBackground, color: colors.text }]}
             value={text}
             onChangeText={setText}
             placeholder="Type a message..."
+            placeholderTextColor={colors.subtext}
             multiline
           />
           <Pressable
@@ -355,6 +356,7 @@ export default function ChatRoom() {
             <Text
               style={[
                 styles.sendText,
+                { color: colors.primary },
                 (sending || !text.trim()) && styles.sendTextDisabled,
               ]}
             >
@@ -370,16 +372,13 @@ export default function ChatRoom() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#161412",
   },
   keyboardView: {
     flex: 1,
   },
   header: {
     padding: 16,
-    backgroundColor: "#161412",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.05)",
     flexDirection: "row",
     alignItems: "center",
   },
@@ -389,16 +388,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(28, 24, 21, 0.85)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
     marginRight: 12,
   },
   title: {
     flex: 1,
     fontSize: 18,
     fontWeight: "700",
-    color: "#FFF",
   },
   messageList: {
     padding: 16,
@@ -412,28 +408,21 @@ const styles = StyleSheet.create({
   },
   myMessage: {
     alignSelf: "flex-end",
-    backgroundColor: "#ff642f",
   },
   theirMessage: {
     alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.1)",
   },
   messageText: {
-    color: "#FFF",
     fontSize: 15,
   },
   inputContainer: {
     flexDirection: "row",
     padding: 16,
-    backgroundColor: "#161412",
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.05)",
     paddingBottom: Platform.OS === "ios" ? 30 : 16,
   },
   input: {
     flex: 1,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    color: "#FFF",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -447,13 +436,11 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   sendText: {
-    color: "#ff642f",
     fontWeight: "600",
   },
   sendTextDisabled: {
-    color: "rgba(255,255,255,0.4)",
+    opacity: 0.4,
   },
-
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -461,7 +448,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "#161412",
     borderRadius: 12,
     padding: 20,
     width: "80%",
@@ -470,7 +456,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#FFF",
     marginBottom: 16,
     textAlign: "center",
   },
@@ -481,19 +466,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.05)",
-  },
-  vehicleItemSelected: {
-    backgroundColor: "rgba(255, 100, 47, 0.15)",
   },
   vehicleItemText: {
     fontSize: 14,
-    color: "#FFF",
   },
   modalCancelButton: {
     marginTop: 16,
     paddingVertical: 12,
-    backgroundColor: "#EF4444",
     borderRadius: 8,
     alignItems: "center",
   },

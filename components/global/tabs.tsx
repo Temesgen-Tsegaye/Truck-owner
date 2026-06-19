@@ -6,6 +6,8 @@ import Animated, {
   withTiming,
   useDerivedValue,
 } from 'react-native-reanimated';
+import { useAppTheme } from '@/context/theme-context';
+import { Colors } from '@/constants/theme';
 
 type TabsProps = {
   tabs: string[];
@@ -17,6 +19,8 @@ type TabsProps = {
 export  function Tabs({ tabs, activeIndex, onChange, style }: TabsProps) {
   const [containerWidthState, setContainerWidthState] = useState(0);
   const containerWidth = useSharedValue(0);
+  const { isDarkMode } = useAppTheme();
+  const theme = Colors[isDarkMode ? "dark" : "light"];
   const left = useDerivedValue(() => {
     const width = containerWidth.value / (tabs.length || 1);
     return withTiming(activeIndex * width, { duration: 250 });
@@ -33,7 +37,7 @@ export  function Tabs({ tabs, activeIndex, onChange, style }: TabsProps) {
 
   return (
     <View
-      style={[styles.container, style]}
+      style={[styles.container, { backgroundColor: theme.overlay }, style]}
       onLayout={(event: LayoutChangeEvent) => {
         const { width } = event.nativeEvent.layout;
         setContainerWidthState(width);
@@ -53,7 +57,7 @@ export  function Tabs({ tabs, activeIndex, onChange, style }: TabsProps) {
             onPress={() => handlePress(index)}
             style={styles.tab}
           >
-            <Text style={[styles.label, isActive && styles.activeLabel]}>{tab}</Text>
+            <Text style={[styles.label, { color: isActive ? theme.textOnPrimary : theme.subtext }]}>{tab}</Text>
           </Pressable>
         );
       })}
@@ -98,7 +102,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     position: 'relative',
-    backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 5,
     overflow: 'hidden',
     width: '90%',
@@ -120,11 +123,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: "rgba(255,255,255,0.5)",
     zIndex: 1,
-  },
-  activeLabel: {
-    color: "#fff",
   },
 });
 

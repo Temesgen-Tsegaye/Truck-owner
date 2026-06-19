@@ -21,15 +21,17 @@ const { LightTheme, DarkTheme } = adaptNavigationTheme({
 const CombinedDefaultTheme = merge(MD3LightTheme, LightTheme);
 const CombinedDarkTheme = merge(MD3DarkTheme, DarkTheme);
 
-// Customizing the theme with our app colors
 const customLightTheme = {
   ...CombinedDefaultTheme,
   colors: {
     ...CombinedDefaultTheme.colors,
-    primary: Colors.light.tint,
+    primary: Colors.light.primary,
     secondary: Colors.light.secondary,
     background: Colors.light.background,
-    surface: Colors.light.background,
+    surface: Colors.light.card,
+    surfaceVariant: Colors.light.inputBackground,
+    error: Colors.light.error,
+    onPrimary: Colors.light.textOnPrimary,
   },
 };
 
@@ -37,10 +39,13 @@ const customDarkTheme = {
   ...CombinedDarkTheme,
   colors: {
     ...CombinedDarkTheme.colors,
-    primary: Colors.dark.tint,
+    primary: Colors.dark.primary,
     secondary: Colors.dark.secondary,
     background: Colors.dark.background,
-    surface: Colors.dark.background,
+    surface: Colors.dark.card,
+    surfaceVariant: Colors.dark.inputBackground,
+    error: Colors.dark.error,
+    onPrimary: Colors.dark.textOnPrimary,
   },
 };
 

@@ -3,26 +3,30 @@ import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useAppTheme } from '@/context/theme-context';
+import { Colors } from '@/constants/theme';
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const { isDarkMode } = useAppTheme();
+  const theme = Colors[isDarkMode ? "dark" : "light"];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#161412" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.background} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#FFF" />
+          <Ionicons name="arrow-back" size={22} color={theme.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Notifications</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Notifications</Text>
         <View style={styles.backBtn} />
       </View>
       <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Ionicons name="notifications-off-outline" size={64} color="rgba(255,255,255,0.15)" />
+        <View style={[styles.iconContainer, { backgroundColor: theme.overlay }]}>
+          <Ionicons name="notifications-off-outline" size={64} color={isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'} />
         </View>
-        <Text style={styles.emptyTitle}>No Notifications</Text>
-        <Text style={styles.emptySubtitle}>You're all caught up! New notifications will appear here.</Text>
+        <Text style={[styles.emptyTitle, { color: theme.text }]}>No Notifications</Text>
+        <Text style={[styles.emptySubtitle, { color: theme.subtext }]}>You're all caught up! New notifications will appear here.</Text>
       </View>
     </SafeAreaView>
   );
@@ -31,7 +35,6 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#161412',
   },
   header: {
     flexDirection: 'row',
@@ -51,7 +54,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 18,
     fontWeight: '700',
-    color: '#FFF',
   },
   content: {
     flex: 1,
@@ -64,7 +66,6 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.03)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -72,12 +73,10 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#FFF',
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.4)',
     textAlign: 'center',
     lineHeight: 20,
   },

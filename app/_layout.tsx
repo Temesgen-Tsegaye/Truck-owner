@@ -13,6 +13,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 
 import { SessionProvider, useSession, isValidToken } from '@/context/auth-context';
+import { SocketProvider } from '@/context/socket-context';
 import { SplashScreenController } from '@/components/splash';
 import { ThemeProvider } from '@/context/theme-context';
 
@@ -39,11 +40,13 @@ export default function Root() {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
+        <SocketProvider>
         <ThemeProvider>
           <SplashScreenController />
           <RootLayoutNav />
           <Toast />
         </ThemeProvider>
+        </SocketProvider>
       </SessionProvider>
     </QueryClientProvider>
   );

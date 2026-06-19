@@ -1,11 +1,9 @@
 import { Tabs, useRouter, usePathname } from "expo-router";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { View, Pressable, Platform, StyleSheet } from "react-native";
+import { useAppTheme } from "@/context/theme-context";
+import { Colors } from "@/constants/theme";
 
-/**
- * Custom tab button that keeps all tab buttons sized and centered consistently.
- * The chat tab also always routes back to the chat list from a room detail screen.
- */
 function TabBarButton(props: any) {
   const router = useRouter();
   const pathname = usePathname();
@@ -26,20 +24,21 @@ function TabBarButton(props: any) {
   );
 }
 
-const TabIcon = ({ focused, iconName }: { focused: boolean, iconName: any }) => {
+function TabIcon({ focused, iconName, colors }: { focused: boolean; iconName: any; colors: typeof Colors.light }) {
   if (focused) {
     return (
-      <View style={styles.activeIconContainer}>
-        <Feather name={iconName} size={20} color="#fff" />
+      <View style={[styles.activeIconContainer, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
+        <Feather name={iconName} size={20} color={colors.textOnPrimary} />
       </View>
     );
   }
-  return (
-    <Feather name={iconName} size={22} color="#8c8c8c" />
-  );
-};
+  return <Feather name={iconName} size={22} color={colors.tabIconDefault} />;
+}
 
 export default function AppLayout() {
+  const { isDarkMode } = useAppTheme();
+  const colors = isDarkMode ? Colors.dark : Colors.light;
+
   return (
     <Tabs
       backBehavior="firstRoute"
@@ -47,7 +46,7 @@ export default function AppLayout() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarButton: (props) => <TabBarButton {...props} />,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [styles.tabBar, { backgroundColor: colors.tabBar, borderTopColor: colors.border }],
         tabBarIconStyle: styles.tabIcon,
         tabBarItemStyle: {
           flex: 1,
@@ -58,21 +57,22 @@ export default function AppLayout() {
           paddingVertical: 0,
           marginVertical: 0,
         },
-        tabBarActiveTintColor: '#f15a2b',
+        tabBarActiveTintColor: colors.tabIconSelected,
+        tabBarInactiveTintColor: colors.tabIconDefault,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Loads",
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} iconName="home" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} iconName="home" colors={colors} />,
         }}
       />
       <Tabs.Screen
         name="shipments"
         options={{
           title: "Shipments",
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} iconName="credit-card" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} iconName="credit-card" colors={colors} />,
         }}
       />
       <Tabs.Screen
@@ -81,11 +81,11 @@ export default function AppLayout() {
           title: "Vehicles",
           tabBarIcon: ({ focused }) =>
             focused ? (
-              <View style={styles.activeIconContainer}>
-                <MaterialCommunityIcons name="truck" size={20} color="#fff" />
+              <View style={[styles.activeIconContainer, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
+                <MaterialCommunityIcons name="truck" size={20} color={colors.textOnPrimary} />
               </View>
             ) : (
-              <MaterialCommunityIcons name="truck-outline" size={22} color="#8c8c8c" />
+              <MaterialCommunityIcons name="truck-outline" size={22} color={colors.tabIconDefault} />
             ),
         }}
       />
@@ -93,14 +93,14 @@ export default function AppLayout() {
         name="chat"
         options={{
           title: "Chat",
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} iconName="message-circle" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} iconName="message-circle" colors={colors} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} iconName="user" />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} iconName="user" colors={colors} />,
         }}
       />
     </Tabs>
@@ -118,8 +118,7 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     height: 70,
-    backgroundColor: '#23201d',
-    borderTopWidth: 0,
+    borderTopWidth: 1,
     paddingBottom: 0,
   },
   tabIcon: {
@@ -131,13 +130,11 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#f15a2b', // Orange active circle!
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#f15a2b',
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.4,
     shadowRadius: 5,
     elevation: 5,
-  }
+  },
 });

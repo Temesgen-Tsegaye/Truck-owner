@@ -4,20 +4,24 @@ import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { useChatRoomsQuery } from '@/query/chat';
 import { StatusBar } from 'expo-status-bar';
+import { useAppTheme } from '@/context/theme-context';
+import { Colors } from '@/constants/theme';
 
 export default function ChatList() {
   const router = useRouter();
   const { data: rooms = [], isLoading, error } = useChatRoomsQuery();
+  const { isDarkMode } = useAppTheme();
+  const colors = isDarkMode ? Colors.dark : Colors.light;
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="light" />
-        <View style={styles.header}>
-          <Text style={styles.title}>Messages</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+        <View style={[styles.header, { backgroundColor: colors.background }]}>
+          <Text style={[styles.title, { color: colors.text }]}>Messages</Text>
         </View>
         <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>Loading conversations...</Text>
+          <Text style={[styles.emptyTitle, { color: colors.subtext }]}>Loading conversations...</Text>
         </View>
       </View>
     );
@@ -25,24 +29,24 @@ export default function ChatList() {
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="light" />
-        <View style={styles.header}>
-          <Text style={styles.title}>Messages</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+        <View style={[styles.header, { backgroundColor: colors.background }]}>
+          <Text style={[styles.title, { color: colors.text }]}>Messages</Text>
         </View>
         <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>Failed to load conversations</Text>
-          <Text style={styles.emptySubtitle}>Please try again later.</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Failed to load conversations</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.subtext }]}>Please try again later.</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
-      <View style={styles.header}>
-        <Text style={styles.title}>Messages</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
+        <Text style={[styles.title, { color: colors.text }]}>Messages</Text>
       </View>
       <FlatList
         data={rooms}
@@ -53,22 +57,22 @@ export default function ChatList() {
             style={styles.roomItem}
             onPress={() => router.push(`/(tabs)/chat/${item.id}`)}
           >
-            <BlurView intensity={20} tint="dark" style={styles.roomCard}>
-              <View style={styles.roomIcon}>
-                <Text style={styles.roomIconText}>
+            <BlurView intensity={20} tint={isDarkMode ? 'dark' : 'light'} style={[styles.roomCard, { backgroundColor: colors.overlay, borderColor: colors.border }]}>
+              <View style={[styles.roomIcon, { backgroundColor: colors.primaryLight }]}>
+                <Text style={[styles.roomIconText, { color: colors.primary }]}>
                   {item.merchant?.bussinessName?.charAt(0) || 
                    item.merchant?.user?.firstName?.charAt(0) || 'M'}
                 </Text>
               </View>
               <View style={styles.roomInfo}>
-                <Text style={styles.roomName}>
+                <Text style={[styles.roomName, { color: colors.text }]}>
                   {item.merchant?.bussinessName || 
                    `${item.merchant?.user?.firstName || ''} ${item.merchant?.user?.lastName || ''}`.trim() || 
                    'Merchant'}
                 </Text>
-                <Text style={styles.roomSubtext}>Load: {item.load?.location || 'Unknown'}</Text>
+                <Text style={[styles.roomSubtext, { color: colors.subtext }]}>Load: {item.load?.location || 'Unknown'}</Text>
               </View>
-              <Text style={styles.roomDate}>
+              <Text style={[styles.roomDate, { color: colors.subtext }]}>
                 {new Date(item.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
               </Text>
             </BlurView>
@@ -76,8 +80,8 @@ export default function ChatList() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No conversations yet</Text>
-            <Text style={styles.emptySubtitle}>Start a negotiation from the available loads.</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No conversations yet</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.subtext }]}>Start a negotiation from the available loads.</Text>
           </View>
         }
       />
@@ -88,17 +92,14 @@ export default function ChatList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#161412',
   },
   header: {
     padding: 24,
     paddingTop: 60,
-    backgroundColor: '#161412',
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#fff',
     letterSpacing: -0.5,
   },
   listContent: {
@@ -114,22 +115,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 16,
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 20,
   },
   roomIcon: {
     width: 54,
     height: 54,
     borderRadius: 27,
-    backgroundColor: 'rgba(255, 100, 47, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   roomIconText: {
-    color: '#ff642f',
     fontSize: 22,
     fontWeight: '700',
   },
@@ -139,17 +136,15 @@ const styles = StyleSheet.create({
   roomName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
     marginBottom: 4,
   },
   roomSubtext: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
   },
   roomDate: {
     fontSize: 12,
     fontWeight: '500',
-    color: 'rgba(255,255,255,0.4)',
+    opacity: 0.6,
   },
   emptyState: {
     flex: 1,
@@ -161,12 +156,10 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
   },
 });

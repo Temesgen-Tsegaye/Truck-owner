@@ -9,6 +9,8 @@ import { CustomButton } from '../global/button';
 import { useProfile, useUpdateBaseProfile } from '@/query/profile/profile-query';
 import { Skeleton } from '../global/skeleton';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '@/context/theme-context';
+import { Colors } from '@/constants/theme';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000';
 
@@ -41,6 +43,8 @@ export  function NameForm() {
   });
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const { isDarkMode } = useAppTheme();
+  const theme = Colors[isDarkMode ? "dark" : "light"];
 
   useEffect(() => {
     if (profile) {
@@ -78,7 +82,7 @@ export  function NameForm() {
   if (isLoading) {
     return (
       <View style={{ padding: 20 }}>
-        <View style={{ backgroundColor: "rgba(255,255,255,0.03)", padding: 20, borderRadius: 10 }}>
+        <View style={{ backgroundColor: theme.overlay, padding: 20, borderRadius: 10 }}>
           <View style={{ alignSelf: 'center', marginBottom: 20 }}>
             <Skeleton width={100} height={100} borderRadius={50} />
           </View>
@@ -96,7 +100,7 @@ export  function NameForm() {
 
   return (
     <Animated.View entering={ZoomIn} exiting={ZoomOut} style={styles.wrapper}>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.card, borderColor: theme.border }]}>
       
       {/* Profile Picture */}
       <View style={styles.avatarContainer}>
@@ -104,8 +108,8 @@ export  function NameForm() {
           {imagePreview ? (
             <Image source={{ uri: imagePreview }} style={styles.avatar} />
           ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={40} color="rgba(255,255,255,0.5)" />
+            <View style={[styles.avatarPlaceholder, { backgroundColor: theme.overlay }]}>
+              <Ionicons name="person" size={40} color={theme.subtext} />
             </View>
           )}
           <View style={styles.editBadge}>
@@ -119,14 +123,14 @@ export  function NameForm() {
         name="firstName"
         render={({ field: { onChange, onBlur, value } }) => (
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>First Name</Text>
+            <Text style={[styles.label, { color: theme.text }]}>First Name</Text>
             <TextInput
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
               placeholder="Enter your first name"
-              placeholderTextColor="rgba(255,255,255,0.3)"
-              style={[styles.input, errors.firstName && styles.errorInput]}
+              placeholderTextColor={theme.subtext}
+              style={[styles.input, { backgroundColor: theme.overlay, borderColor: theme.border, color: theme.text }, errors.firstName && styles.errorInput]}
             />
             {errors.firstName && <Text style={styles.errorText}>{errors.firstName.message}</Text>}
           </View>
@@ -139,14 +143,14 @@ export  function NameForm() {
         name="lastName"
         render={({ field: { onChange, onBlur, value } }) => (
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Last Name</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Last Name</Text>
             <TextInput
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
               placeholder="Enter your last name"
-              placeholderTextColor="rgba(255,255,255,0.3)"
-              style={[styles.input, errors.lastName && styles.errorInput]}
+              placeholderTextColor={theme.subtext}
+              style={[styles.input, { backgroundColor: theme.overlay, borderColor: theme.border, color: theme.text }, errors.lastName && styles.errorInput]}
             />
             {errors.lastName && <Text style={styles.errorText}>{errors.lastName.message}</Text>}
           </View>
@@ -171,24 +175,22 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     justifyContent: 'flex-start',
-    backgroundColor: "rgba(255,255,255,0.02)", borderRadius: 20, borderWidth: 1, borderColor: "rgba(255,255,255,0.05)",
+    borderRadius: 20,
+    borderWidth: 1,
   },
   fieldGroup: {
     marginBottom: 4,
   },
   label: {
-    // marginBottom: 5,
-    fontWeight: "600", fontSize: 13, marginBottom: 8, color: "rgba(255,255,255,0.7)",
-    
+    fontWeight: "600",
+    fontSize: 13,
+    marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
     padding: 16,
     borderRadius: 16,
     marginBottom: 16,
-    backgroundColor: "rgba(255,255,255,0.03)",
-    color: "#FFF",
   },
   errorInput: {
     borderColor: '#E74C3C', // red for errors
@@ -213,7 +215,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },

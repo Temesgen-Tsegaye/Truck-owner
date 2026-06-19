@@ -8,10 +8,14 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
+import { useAppTheme } from '@/context/theme-context';
+import { Colors } from '@/constants/theme';
 
 export default function EditProfile() {
   const [activeIndex, setActiveIndex] = useState(0);
   const queryClient = useQueryClient();
+  const { isDarkMode } = useAppTheme();
+  const theme = Colors[isDarkMode ? "dark" : "light"];
 
   useFocusEffect(
     useCallback(() => {
@@ -20,8 +24,8 @@ export default function EditProfile() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#161412' }}>
-      <StatusBar style="light" />
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <StatusBar style={isDarkMode ? "light" : "dark"} />
       <View style={{ paddingTop: 20 }}>
           <Tabs
             tabs={["Profile", "Truck Owner", "Phone"]}

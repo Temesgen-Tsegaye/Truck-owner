@@ -8,6 +8,8 @@ import { CustomButton } from '../global/button';
 import { useProfile, useUpdateProfileByType } from '@/query/profile/profile-query';
 import { UpdateVehicleOwnerInput } from '@/query/profile/types';
 import { Skeleton } from '../global/skeleton';
+import { useAppTheme } from '@/context/theme-context';
+import { Colors } from '@/constants/theme';
 
 // Zod schema for Truck Owner
 const truckOwnerSchema = z.object({
@@ -20,6 +22,8 @@ type TruckOwnerFormData = z.infer<typeof truckOwnerSchema>;
 export function TruckOwnerForm() {
   const { data: profile, isLoading: isProfileLoading } = useProfile();
   const { mutate: updateProfile, isPending } = useUpdateProfileByType();
+  const { isDarkMode } = useAppTheme();
+  const theme = Colors[isDarkMode ? "dark" : "light"];
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<TruckOwnerFormData>({
     resolver: zodResolver(truckOwnerSchema),
@@ -68,22 +72,23 @@ export function TruckOwnerForm() {
 
   return (
     <Animated.View entering={ZoomIn} exiting={ZoomOut}>
-      <View style={styles.formCard}>
+      <View style={[styles.formCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         {/* Name */}
         <Controller
           control={control}
           name="name"
           render={({ field: { onChange, onBlur, value } }) => (
             <>
-              <Text style={styles.label}>Company / Owner Name</Text>
+              <Text style={[styles.label, { color: theme.text }]}>Company / Owner Name</Text>
               <TextInput
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
                 placeholder="Enter your name"
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor={theme.subtext}
                 style={[
-                  styles.input, 
+                  styles.input,
+                  { backgroundColor: theme.overlay, borderColor: theme.border, color: theme.text },
                   errors.name && styles.errorInput
                 ]}
               />
@@ -98,15 +103,16 @@ export function TruckOwnerForm() {
           name="contactInfo"
           render={({ field: { onChange, onBlur, value } }) => (
             <>
-              <Text style={styles.label}>Contact Information</Text>
+              <Text style={[styles.label, { color: theme.text }]}>Contact Information</Text>
               <TextInput
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
                 placeholder="Enter contact details (email/phone)"
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor={theme.subtext}
                 style={[
-                  styles.input, 
+                  styles.input,
+                  { backgroundColor: theme.overlay, borderColor: theme.border, color: theme.text },
                   errors.contactInfo && styles.errorInput
                 ]}
               />
@@ -131,26 +137,20 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)",
-    backgroundColor: "rgba(255,255,255,0.02)",
     marginVertical: 10,
   },
   label: {
     fontSize: 13,
     fontWeight: "600",
     marginBottom: 8,
-    color: "rgba(255,255,255,0.7)",
   },
   input: {
     height: 54,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "rgba(255,255,255,0.03)",
     borderRadius: 16,
     paddingHorizontal: 16,
     marginBottom: 16,
     fontSize: 15,
-    color: "#FFFFFF",
   },
   errorInput: {
     borderColor: '#E74C3C',

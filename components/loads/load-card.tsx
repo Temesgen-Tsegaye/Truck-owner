@@ -12,10 +12,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { LoadItem } from "@/lib/load-schemas";
 import { useRouter } from "expo-router";
 import { api } from "@/lib/api";
-import { Fonts } from "@/constants/theme";
+import { Fonts, Colors } from "@/constants/theme";
+import { useAppTheme } from "@/context/theme-context";
 
 type Props = {
   load: LoadItem;
+  onEdit?: () => void;
 };
 
 const TEXTURE_DOTS = Array.from({ length: 54 }, (_, index) => ({
@@ -24,9 +26,19 @@ const TEXTURE_DOTS = Array.from({ length: 54 }, (_, index) => ({
   size: 2 + (index % 2),
 }));
 
-export function LoadCard({ load }: Props) {
+export function LoadCard({ load, onEdit }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { isDarkMode } = useAppTheme();
+  const theme = Colors[isDarkMode ? "dark" : "light"];
+
+  const gradientColors = isDarkMode
+    ? ["rgba(74, 63, 57, 0.94)", "rgba(56, 49, 44, 0.9)", "rgba(42, 37, 34, 0.86)"]
+    : ["rgba(255, 255, 255, 0.94)", "rgba(250, 245, 242, 0.9)", "rgba(245, 238, 235, 0.86)"];
+
+  const highlightColors = isDarkMode
+    ? ["rgba(255,255,255,0.14)", "rgba(255,255,255,0.03)", "rgba(255,255,255,0)"]
+    : ["rgba(0,0,0,0.04)", "rgba(0,0,0,0.01)", "rgba(0,0,0,0)"];
 
   const handleStartChat = async () => {
     if (loading) return;
@@ -47,14 +59,10 @@ export function LoadCard({ load }: Props) {
   };
 
   return (
-    <View style={styles.cardShell}>
-      <BlurView intensity={24} tint="dark" style={styles.card}>
+    <View style={[styles.cardShell, { borderColor: theme.border, backgroundColor: theme.card }]}>
+      <BlurView intensity={24} tint={isDarkMode ? "dark" : "light"} style={[styles.card, { backgroundColor: isDarkMode ? "rgba(68, 57, 51, 0.34)" : "rgba(255, 255, 255, 0.5)" }]}>
         <LinearGradient
-          colors={[
-            "rgba(74, 63, 57, 0.94)",
-            "rgba(56, 49, 44, 0.9)",
-            "rgba(42, 37, 34, 0.86)",
-          ]}
+          colors={gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFillObject}
@@ -69,6 +77,7 @@ export function LoadCard({ load }: Props) {
                   opacity: dot.opacity,
                   width: dot.size,
                   height: dot.size,
+                  backgroundColor: isDarkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.06)",
                 },
               ]}
             />
@@ -76,7 +85,7 @@ export function LoadCard({ load }: Props) {
         </View>
         <LinearGradient
           pointerEvents="none"
-          colors={["rgba(255,255,255,0.14)", "rgba(255,255,255,0.03)", "rgba(255,255,255,0)"]}
+          colors={highlightColors}
           start={{ x: 0.05, y: 0 }}
           end={{ x: 0.95, y: 1 }}
           style={styles.highlightMask}
@@ -85,49 +94,58 @@ export function LoadCard({ load }: Props) {
         <View style={styles.content}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.kicker}>Active Load</Text>
-              <Text style={styles.orderId}>ID - {load.id.slice(0, 8).toUpperCase()}</Text>
+              <Text style={[styles.kicker, { color: isDarkMode ? '#C9B8AD' : '#78716C' }]}>Active Load</Text>
+              <Text style={[styles.orderId, { color: isDarkMode ? '#E2D8D2' : '#57534E' }]} numberOfLines={1}>ID - {load.id.slice(0, 8).toUpperCase()}</Text>
             </View>
-            <TouchableOpacity
-              style={styles.trackingPill}
-              onPress={handleStartChat}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.trackingPillText}>Negotiate</Text>
-              )}
-            </TouchableOpacity>
+            {onEdit ? (
+              <TouchableOpacity
+                style={[styles.trackingPill, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
+                onPress={onEdit}
+              >
+                <Text style={styles.trackingPillText}>Edit Load</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.trackingPill, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
+                onPress={handleStartChat}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.trackingPillText}>Negotiate</Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.detailsRow}>
             <View style={styles.detailsCol}>
-              <Text style={styles.labelSmall}>From</Text>
-              <Text style={styles.cityText} numberOfLines={1}>{load.startingPlace}</Text>
-              <Text style={styles.dateText}>Ready Now</Text>
+              <Text style={[styles.labelSmall, { color: isDarkMode ? '#B4A6A0' : '#78716C' }]}>From</Text>
+              <Text style={[styles.cityText, { color: isDarkMode ? '#FFF6F0' : '#1C1917' }]} numberOfLines={1}>{load.startingPlace}</Text>
+              <Text style={[styles.dateText, { color: isDarkMode ? '#D1C4BE' : '#78716C' }]} numberOfLines={1}>Ready Now</Text>
 
               <View style={styles.spacer} />
 
-              <Text style={styles.labelSmall}>Category</Text>
-              <Text style={styles.personText}>{load.loadCategory.replace(/_/g, " ")}</Text>
+              <Text style={[styles.labelSmall, { color: isDarkMode ? '#B4A6A0' : '#78716C' }]}>Category</Text>
+              <Text style={[styles.personText, { color: isDarkMode ? '#F2E8E3' : '#292524' }]} numberOfLines={1}>{load.loadCategory.replace(/_/g, " ")}</Text>
 
               <View style={styles.contactRow}>
-                <View style={styles.actionBtn}>
-                  <Ionicons name="cube-outline" size={16} color="#d8cec6" />
+                <View style={[styles.actionBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }]}>
+                  <Ionicons name="cube-outline" size={16} color={isDarkMode ? "#d8cec6" : "#57534E"} />
                 </View>
               </View>
             </View>
 
             <View style={styles.detailsCol}>
-              <Text style={styles.labelSmall}>To</Text>
-              <Text style={styles.cityText} numberOfLines={1}>{load.destinationPlace}</Text>
-              <Text style={styles.dateText}>{new Date(load.deliveryDate).toLocaleDateString()}</Text>
+              <Text style={[styles.labelSmall, { color: isDarkMode ? '#B4A6A0' : '#78716C' }]}>To</Text>
+              <Text style={[styles.cityText, { color: isDarkMode ? '#FFF6F0' : '#1C1917' }]} numberOfLines={1}>{load.destinationPlace}</Text>
+              <Text style={[styles.dateText, { color: isDarkMode ? '#D1C4BE' : '#78716C' }]} numberOfLines={1}>{new Date(load.deliveryDate).toLocaleDateString()}</Text>
 
               <View style={styles.spacer} />
 
-              <Text style={styles.labelSmall}>Specs</Text>
-              <Text style={styles.personText}>{load.weight} kg</Text>
+              <Text style={[styles.labelSmall, { color: isDarkMode ? '#B4A6A0' : '#78716C' }]}>Specs</Text>
+              <Text style={[styles.personText, { color: isDarkMode ? '#F2E8E3' : '#292524' }]} numberOfLines={1}>{load.weight} kg</Text>
 
               <View style={styles.contactRow}>
                 <View
@@ -156,7 +174,6 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
     backgroundColor: "rgba(62, 53, 48, 0.18)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 14 },
@@ -182,11 +199,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 16,
   },
-  textureDot: {
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.7)",
-    marginVertical: 5,
-  },
+    textureDot: {
+      borderRadius: 999,
+      marginVertical: 5,
+    },
   highlightMask: {
     ...StyleSheet.absoluteFillObject,
     opacity: 0.85,
@@ -268,9 +284,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },

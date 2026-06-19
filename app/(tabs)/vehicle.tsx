@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -170,7 +170,7 @@ export default function VehiclesScreen() {
           <Image source={{ uri: getImageUri(item) }} style={styles.vehicleImage} />
         ) : (
           <View style={[styles.vehicleImage, styles.vehicleImagePlaceholder]}>
-            <Ionicons name="car" size={32} color="rgba(255,255,255,0.3)" />
+            <Ionicons name="car" size={32} color={theme.icon} />
           </View>
         )}
         <View style={styles.vehicleInfo}>
@@ -190,13 +190,327 @@ export default function VehiclesScreen() {
     </View>
   );
 
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+      paddingTop: 20,
+      paddingBottom: 16,
+    },
+    title: {
+      fontFamily: Fonts.bold,
+      fontSize: 24,
+      color: theme.text,
+    },
+    addBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: theme.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    listContent: {
+      paddingHorizontal: 24,
+      paddingBottom: 120,
+    },
+    vehicleCard: {
+      flexDirection: 'row',
+      backgroundColor: theme.card,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.border,
+      marginBottom: 12,
+      overflow: 'hidden',
+      alignItems: 'center',
+    },
+    vehicleCardTouchable: {
+      flex: 1,
+      flexDirection: 'row',
+      padding: 12,
+    },
+    vehicleImage: {
+      width: 80,
+      height: 80,
+      borderRadius: 12,
+    },
+    vehicleImagePlaceholder: {
+      backgroundColor: theme.overlay,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    vehicleInfo: {
+      flex: 1,
+      marginLeft: 12,
+      justifyContent: 'center',
+    },
+    vehicleType: {
+      fontFamily: Fonts.bold,
+      fontSize: 16,
+      color: theme.text,
+      textTransform: 'capitalize',
+    },
+    vehiclePlate: {
+      fontFamily: Fonts.medium,
+      fontSize: 13,
+      color: theme.primary,
+      marginTop: 4,
+    },
+    vehicleCapacity: {
+      fontFamily: Fonts.regular,
+      fontSize: 12,
+      color: theme.subtext,
+      marginTop: 2,
+    },
+    vehicleDriver: {
+      fontFamily: Fonts.regular,
+      fontSize: 12,
+      color: theme.subtext,
+      marginTop: 2,
+    },
+    deleteBtn: {
+      padding: 16,
+    },
+    emptyState: {
+      alignItems: 'center',
+      paddingTop: 80,
+    },
+    emptyTitle: {
+      fontFamily: Fonts.bold,
+      fontSize: 18,
+      color: theme.text,
+      marginTop: 16,
+    },
+    emptySubtitle: {
+      fontFamily: Fonts.regular,
+      fontSize: 14,
+      color: theme.subtext,
+      marginTop: 8,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      justifyContent: 'flex-end',
+    },
+    modalContent: {
+      backgroundColor: theme.card,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 24,
+      maxHeight: '90%',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    modalTitle: {
+      fontFamily: Fonts.bold,
+      fontSize: 20,
+      color: theme.text,
+    },
+    imagePicker: {
+      alignSelf: 'center',
+      marginBottom: 20,
+    },
+    pickedImage: {
+      width: 200,
+      height: 150,
+      borderRadius: 12,
+    },
+    imagePickerPlaceholder: {
+      width: 200,
+      height: 150,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: theme.border,
+      borderStyle: 'dashed',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    imagePickerText: {
+      fontFamily: Fonts.regular,
+      fontSize: 13,
+      color: theme.subtext,
+      marginTop: 8,
+    },
+    label: {
+      fontFamily: Fonts.medium,
+      fontSize: 13,
+      color: theme.text,
+      marginBottom: 8,
+      marginTop: 8,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: theme.overlay,
+      color: theme.text,
+      fontFamily: Fonts.regular,
+      fontSize: 15,
+    },
+    inputError: {
+      borderColor: '#E74C3C',
+    },
+    errorText: {
+      color: '#E74C3C',
+      fontSize: 12,
+      marginTop: 4,
+      fontFamily: Fonts.regular,
+    },
+    pickerButton: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: theme.overlay,
+    },
+    pickerButtonText: {
+      color: theme.text,
+      fontFamily: Fonts.regular,
+      fontSize: 15,
+      textTransform: 'capitalize',
+    },
+    typePickerList: {
+      backgroundColor: theme.card,
+      borderRadius: 12,
+      marginTop: 4,
+      overflow: 'hidden',
+    },
+    typeOption: {
+      padding: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    typeOptionSelected: {
+      backgroundColor: theme.overlay,
+    },
+    typeOptionText: {
+      color: theme.text,
+      fontFamily: Fonts.regular,
+      fontSize: 14,
+      textTransform: 'capitalize',
+    },
+    typeOptionTextSelected: {
+      color: theme.primary,
+      fontFamily: Fonts.bold,
+    },
+    submitBtn: {
+      backgroundColor: theme.primary,
+      padding: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      marginTop: 24,
+      marginBottom: 20,
+    },
+    submitBtnDisabled: {
+      opacity: 0.6,
+    },
+    submitBtnText: {
+      color: theme.textOnPrimary,
+      fontFamily: Fonts.bold,
+      fontSize: 16,
+    },
+    driverSelected: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: 'rgba(255,100,47,0.1)',
+      borderRadius: 12,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(255,100,47,0.2)',
+    },
+    driverInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    driverName: {
+      color: theme.text,
+      fontFamily: Fonts.medium,
+      fontSize: 14,
+    },
+    driverRemoveBtn: {
+      padding: 4,
+    },
+    driverUnassigned: {
+      color: theme.subtext,
+      fontFamily: Fonts.regular,
+      fontSize: 14,
+      paddingVertical: 4,
+    },
+    driverChangeBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      marginTop: 8,
+    },
+    driverChangeText: {
+      color: theme.primary,
+      fontFamily: Fonts.medium,
+      fontSize: 13,
+    },
+    driverPickerContainer: {
+      marginTop: 4,
+    },
+    driverOption: {
+      padding: 12,
+      borderRadius: 10,
+      marginTop: 4,
+      backgroundColor: theme.card,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    driverOptionSelected: {
+      borderColor: theme.primary,
+      backgroundColor: 'rgba(255,100,47,0.08)',
+    },
+    driverOptionName: {
+      color: theme.text,
+      fontFamily: Fonts.medium,
+      fontSize: 14,
+    },
+    driverOptionAssigned: {
+      color: theme.subtext,
+      fontFamily: Fonts.regular,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    driverOptionFree: {
+      color: theme.statusDelivered,
+      fontFamily: Fonts.regular,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    driverSearchEmpty: {
+      color: theme.subtext,
+      fontFamily: Fonts.regular,
+      fontSize: 13,
+      textAlign: 'center',
+      marginTop: 12,
+    },
+  }), [theme]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#161412" />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.background} />
       <View style={styles.header}>
         <Text style={styles.title}>My Vehicles</Text>
         <TouchableOpacity onPress={openAddModal} style={styles.addBtn}>
-          <Ionicons name="add" size={24} color="#FFF" />
+          <Ionicons name="add" size={24} color={theme.text} />
         </TouchableOpacity>
       </View>
 
@@ -208,7 +522,7 @@ export default function VehiclesScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Ionicons name="car-outline" size={64} color="rgba(255,255,255,0.15)" />
+            <Ionicons name="car-outline" size={64} color={theme.icon} />
             <Text style={styles.emptyTitle}>No vehicles yet</Text>
             <Text style={styles.emptySubtitle}>Tap the + button to add your first truck</Text>
           </View>
@@ -222,7 +536,7 @@ export default function VehiclesScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>{editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}</Text>
                 <TouchableOpacity onPress={() => { setModalVisible(false); resetForm(); }}>
-                  <Ionicons name="close" size={24} color="#FFF" />
+                  <Ionicons name="close" size={24} color={theme.text} />
                 </TouchableOpacity>
               </View>
 
@@ -232,7 +546,7 @@ export default function VehiclesScreen() {
                   <Image source={{ uri: carImage }} style={styles.pickedImage} />
                 ) : (
                   <View style={styles.imagePickerPlaceholder}>
-                    <Ionicons name="camera-outline" size={32} color="rgba(255,255,255,0.4)" />
+                    <Ionicons name="camera-outline" size={32} color={theme.icon} />
                     <Text style={styles.imagePickerText}>Add Car Photo</Text>
                   </View>
                 )}
@@ -242,7 +556,7 @@ export default function VehiclesScreen() {
               <Text style={styles.label}>Vehicle Type</Text>
               <TouchableOpacity onPress={() => setShowTypePicker(!showTypePicker)} style={styles.pickerButton}>
                 <Text style={styles.pickerButtonText}>{vehicleType.replace('_', ' ')}</Text>
-                <Feather name={showTypePicker ? "chevron-up" : "chevron-down"} size={18} color="rgba(255,255,255,0.5)" />
+                <Feather name={showTypePicker ? "chevron-up" : "chevron-down"} size={18} color={theme.icon} />
               </TouchableOpacity>
               {showTypePicker && (
                 <View style={styles.typePickerList}>
@@ -266,7 +580,7 @@ export default function VehiclesScreen() {
                 value={licensePlate}
                 onChangeText={setLicensePlate}
                 placeholder="e.g. AA-12345"
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor={theme.subtext}
                 style={[styles.input, errors.licensePlate && styles.inputError]}
                 autoCapitalize="characters"
               />
@@ -278,7 +592,7 @@ export default function VehiclesScreen() {
                 value={capacity}
                 onChangeText={setCapacity}
                 placeholder="e.g. 10"
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor={theme.subtext}
                 style={[styles.input, errors.capacity && styles.inputError]}
                 keyboardType="numeric"
               />
@@ -325,7 +639,7 @@ export default function VehiclesScreen() {
                         value={driverSearch}
                         onChangeText={setDriverSearch}
                         placeholder="Search drivers by name..."
-                        placeholderTextColor="rgba(255,255,255,0.3)"
+                        placeholderTextColor={theme.subtext}
                         style={[styles.input, { marginTop: 8 }]}
                       />
                       {(driverSearchResults?.data?.length ?? 0) > 0 ? (
@@ -374,317 +688,3 @@ export default function VehiclesScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#161412',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  title: {
-    fontFamily: Fonts.bold,
-    fontSize: 24,
-    color: '#FFF',
-  },
-  addBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#ff642f',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 120,
-  },
-  vehicleCard: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    marginBottom: 12,
-    overflow: 'hidden',
-    alignItems: 'center',
-  },
-  vehicleCardTouchable: {
-    flex: 1,
-    flexDirection: 'row',
-    padding: 12,
-  },
-  vehicleImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-  },
-  vehicleImagePlaceholder: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  vehicleInfo: {
-    flex: 1,
-    marginLeft: 12,
-    justifyContent: 'center',
-  },
-  vehicleType: {
-    fontFamily: Fonts.bold,
-    fontSize: 16,
-    color: '#FFF',
-    textTransform: 'capitalize',
-  },
-  vehiclePlate: {
-    fontFamily: Fonts.medium,
-    fontSize: 13,
-    color: '#ff642f',
-    marginTop: 4,
-  },
-  vehicleCapacity: {
-    fontFamily: Fonts.regular,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
-    marginTop: 2,
-  },
-  vehicleDriver: {
-    fontFamily: Fonts.regular,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.4)',
-    marginTop: 2,
-  },
-  deleteBtn: {
-    padding: 16,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingTop: 80,
-  },
-  emptyTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 18,
-    color: '#FFF',
-    marginTop: 16,
-  },
-  emptySubtitle: {
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.4)',
-    marginTop: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#1a1a1a',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    maxHeight: '90%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 20,
-    color: '#FFF',
-  },
-  imagePicker: {
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  pickedImage: {
-    width: 200,
-    height: 150,
-    borderRadius: 12,
-  },
-  imagePickerPlaceholder: {
-    width: 200,
-    height: 150,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.1)',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imagePickerText: {
-    fontFamily: Fonts.regular,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.4)',
-    marginTop: 8,
-  },
-  label: {
-    fontFamily: Fonts.medium,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.7)',
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    color: '#FFF',
-    fontFamily: Fonts.regular,
-    fontSize: 15,
-  },
-  inputError: {
-    borderColor: '#E74C3C',
-  },
-  errorText: {
-    color: '#E74C3C',
-    fontSize: 12,
-    marginTop: 4,
-    fontFamily: Fonts.regular,
-  },
-  pickerButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-  },
-  pickerButtonText: {
-    color: '#FFF',
-    fontFamily: Fonts.regular,
-    fontSize: 15,
-    textTransform: 'capitalize',
-  },
-  typePickerList: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
-    marginTop: 4,
-    overflow: 'hidden',
-  },
-  typeOption: {
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
-  },
-  typeOptionSelected: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  typeOptionText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    textTransform: 'capitalize',
-  },
-  typeOptionTextSelected: {
-    color: '#ff642f',
-    fontFamily: Fonts.bold,
-  },
-  submitBtn: {
-    backgroundColor: '#ff642f',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 20,
-  },
-  submitBtnDisabled: {
-    opacity: 0.6,
-  },
-  submitBtnText: {
-    color: '#FFF',
-    fontFamily: Fonts.bold,
-    fontSize: 16,
-  },
-  driverSelected: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,100,47,0.1)',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,100,47,0.2)',
-  },
-  driverInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  driverName: {
-    color: '#FFF',
-    fontFamily: Fonts.medium,
-    fontSize: 14,
-  },
-  driverRemoveBtn: {
-    padding: 4,
-  },
-  driverUnassigned: {
-    color: 'rgba(255,255,255,0.35)',
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    paddingVertical: 4,
-  },
-  driverChangeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 8,
-  },
-  driverChangeText: {
-    color: '#ff642f',
-    fontFamily: Fonts.medium,
-    fontSize: 13,
-  },
-  driverPickerContainer: {
-    marginTop: 4,
-  },
-  driverOption: {
-    padding: 12,
-    borderRadius: 10,
-    marginTop: 4,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  driverOptionSelected: {
-    borderColor: '#ff642f',
-    backgroundColor: 'rgba(255,100,47,0.08)',
-  },
-  driverOptionName: {
-    color: '#FFF',
-    fontFamily: Fonts.medium,
-    fontSize: 14,
-  },
-  driverOptionAssigned: {
-    color: 'rgba(255,255,255,0.4)',
-    fontFamily: Fonts.regular,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  driverOptionFree: {
-    color: '#10B981',
-    fontFamily: Fonts.regular,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  driverSearchEmpty: {
-    color: 'rgba(255,255,255,0.4)',
-    fontFamily: Fonts.regular,
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 12,
-  },
-});

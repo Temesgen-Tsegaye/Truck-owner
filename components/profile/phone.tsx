@@ -9,6 +9,8 @@ import { useProfile, useUpdatePhoneNumber, useInitiatePhoneVerification } from '
 import { CustomButton } from '../global/button';
 import { Skeleton } from '../global/skeleton';
 import Toast from 'react-native-toast-message';
+import { useAppTheme } from '@/context/theme-context';
+import { Colors } from '@/constants/theme';
 
 
 const phoneSchema = z.object({
@@ -55,6 +57,8 @@ export function PhoneForm() {
   const { data: profile, isLoading: isProfileLoading } = useProfile();
   const { mutate: updatePhone, isPending: isUpdating } = useUpdatePhoneNumber();
   const { mutate: initiateVerify, isPending: isInitiating } = useInitiatePhoneVerification();
+  const { isDarkMode } = useAppTheme();
+  const theme = Colors[isDarkMode ? "dark" : "light"];
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<PhoneFormData>({
     resolver: zodResolver(phoneSchema),
@@ -120,12 +124,12 @@ export function PhoneForm() {
 
   return (
     <Animated.View entering={ZoomIn} exiting={ZoomOut} style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.label}>Phone Number</Text>
+      <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <Text style={[styles.label, { color: theme.text }]}>Phone Number</Text>
 
         {isVerified && profile?.phoneNumber ? (
-          <View style={styles.verifiedRow}>
-            <Text style={styles.verifiedPhoneText}>{profile.phoneNumber}</Text>
+            <View style={[styles.verifiedRow, { backgroundColor: theme.inputBackground }]}>
+              <Text style={[styles.verifiedPhoneText, { color: theme.text }]}>{profile.phoneNumber}</Text>
             <Animated.View entering={ZoomIn} style={styles.verifiedBadge}>
               <IconSymbol name="checkmark.seal.fill" size={20} color="#ff642f" />
               <Text style={styles.verifiedText}>Verified</Text>
@@ -143,8 +147,9 @@ export function PhoneForm() {
                     onChangeText={onChange}
                     onBlur={onBlur}
                     placeholder="09..."
+                    placeholderTextColor={theme.subtext}
                     keyboardType="phone-pad"
-                    style={[styles.input, errors.phoneNumber && styles.errorInput]}
+                    style={[styles.input, { backgroundColor: theme.overlay, borderColor: theme.border, color: theme.text }, errors.phoneNumber && styles.errorInput]}
                   />
                 )}
               />
@@ -163,7 +168,7 @@ export function PhoneForm() {
             {errors.phoneNumber && <Text style={styles.errorText}>{errors.phoneNumber.message}</Text>}
 
             {/* Verification Status */}
-            <View style={styles.statusSection}>
+            <View style={[styles.statusSection, { borderTopColor: theme.border }]}>
               {profile?.phoneNumber ? (
                 <Animated.View entering={FadeIn} exiting={ZoomOut} style={styles.unverifiedContainer}>
                   <View style={styles.unverifiedTextContainer}>
@@ -194,15 +199,12 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)",
-    backgroundColor: "rgba(255,255,255,0.02)",
     marginVertical: 10,
   },
   label: {
     fontSize: 13,
     fontWeight: "600",
     marginBottom: 8,
-    color: "rgba(255,255,255,0.7)",
   },
   inputContainer: {
     flexDirection: 'row',
@@ -213,12 +215,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 54,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "rgba(255,255,255,0.03)",
     borderRadius: 16,
     paddingHorizontal: 16,
     fontSize: 15,
-    color: "#FFF",
   },
   errorInput: {
     borderColor: '#E0245E',
@@ -249,7 +248,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: '#F0F3F5',
   },
   verifiedBadge: {
     flexDirection: 'row',
@@ -273,12 +271,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: '#FFFFFF',
   },
   verifiedPhoneText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
   },
   unverifiedContainer: {
     backgroundColor: '#FFF9F2',

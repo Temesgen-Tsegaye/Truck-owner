@@ -18,6 +18,14 @@ export function ShipmentCard({ shipment, onPress }: Props) {
   const { isDarkMode } = useAppTheme();
   const theme = Colors[isDarkMode ? "dark" : "light"];
 
+  const gradientColors = isDarkMode
+    ? ["rgba(74, 63, 57, 0.92)", "rgba(54, 48, 44, 0.88)", "rgba(42, 36, 33, 0.84)"]
+    : ["rgba(255, 255, 255, 0.92)", "rgba(250, 245, 242, 0.88)", "rgba(245, 238, 235, 0.84)"];
+
+  const highlightColors = isDarkMode
+    ? ["rgba(255,255,255,0.12)", "rgba(255,255,255,0.03)", "rgba(255,255,255,0)"]
+    : ["rgba(0,0,0,0.04)", "rgba(0,0,0,0.01)", "rgba(0,0,0,0)"];
+
   const getStatusConfig = (status: string) => {
     const lowerStatus = status.toLowerCase();
 
@@ -68,24 +76,20 @@ export function ShipmentCard({ shipment, onPress }: Props) {
 
   return (
     <TouchableOpacity
-      style={styles.cardShell}
+      style={[styles.cardShell, { borderColor: theme.border, backgroundColor: theme.card }]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <BlurView intensity={20} tint="dark" style={styles.card}>
+      <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.card, { backgroundColor: isDarkMode ? "rgba(68, 57, 51, 0.34)" : "rgba(255, 255, 255, 0.5)" }]}>
         <LinearGradient
-          colors={[
-            "rgba(74, 63, 57, 0.92)",
-            "rgba(54, 48, 44, 0.88)",
-            "rgba(42, 36, 33, 0.84)",
-          ]}
+          colors={gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFillObject}
         />
         <LinearGradient
           pointerEvents="none"
-          colors={["rgba(255,255,255,0.12)", "rgba(255,255,255,0.03)", "rgba(255,255,255,0)"]}
+          colors={highlightColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 0.9, y: 1 }}
           style={styles.highlightMask}
@@ -99,43 +103,49 @@ export function ShipmentCard({ shipment, onPress }: Props) {
                 {statusConfig.label}
               </Text>
             </View>
-            <View style={styles.idBadge}>
-              <Text style={styles.idText}>
+            <View style={[styles.idBadge, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', borderColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' }]}>
+              <Text style={[styles.idText, { color: isDarkMode ? '#d4c7c0' : '#57534E' }]}>
                 #{shipment.id.slice(-6)}
               </Text>
             </View>
           </View>
 
-          <View style={styles.routeContainer}>
+          <View style={[styles.routeContainer, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)' }]}>
             <View style={styles.routePoint}>
-              <Ionicons name="location-outline" size={16} color="#6fb0ff" />
-              <Text style={styles.placeText} numberOfLines={1}>{shipment.load.startingPlace || 'Pickup'}</Text>
+              <Ionicons name="location-outline" size={16} color={isDarkMode ? "#6fb0ff" : "#2563EB"} />
+              <Text style={[styles.placeText, { color: isDarkMode ? '#fff6f0' : '#1C1917' }]} numberOfLines={1}>{shipment.load.startingPlace || 'Pickup'}</Text>
             </View>
-            <Ionicons name="arrow-forward" size={16} color="#b9aba3" style={styles.routeArrow} />
+            <Ionicons name="arrow-forward" size={16} color={isDarkMode ? "#b9aba3" : "#78716C"} style={styles.routeArrow} />
             <View style={styles.routePoint}>
-              <Ionicons name="flag-outline" size={16} color="#79c79a" />
-              <Text style={styles.placeText} numberOfLines={1}>{shipment.load.destinationPlace || 'Delivery'}</Text>
+              <Ionicons name="flag-outline" size={16} color={isDarkMode ? "#79c79a" : "#059669"} />
+              <Text style={[styles.placeText, { color: isDarkMode ? '#fff6f0' : '#1C1917' }]} numberOfLines={1}>{shipment.load.destinationPlace || 'Delivery'}</Text>
             </View>
           </View>
 
           <View style={styles.detailsGrid}>
-            <View style={styles.detailItem}>
-              <Ionicons name="calendar-outline" size={16} color="#c7b9b0" />
-              <View>
-                <Text style={styles.detailLabel}>Delivery</Text>
-                <Text style={[styles.detailValue, { color: isPastDue ? '#ff8f7a' : '#fff6f0' }] }>
-                  {deliveryDate.toLocaleDateString()}
-                  {isPastDue && "  late"}
-                </Text>
+            <View style={[styles.detailItem, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)' }]}>
+              <Ionicons name="calendar-outline" size={16} color={isDarkMode ? "#c7b9b0" : "#78716C"} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.detailLabel, { color: isDarkMode ? '#b4a6a0' : '#78716C' }]}>Delivery</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={[styles.detailValue, { color: isDarkMode ? (isPastDue ? '#ff8f7a' : '#fff6f0') : (isPastDue ? '#DC2626' : '#1C1917') }] } numberOfLines={1}>
+                    {deliveryDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </Text>
+                  {isPastDue && (
+                    <View style={{ backgroundColor: isDarkMode ? 'rgba(255,143,122,0.15)' : 'rgba(220,38,38,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: isDarkMode ? '#ff8f7a' : '#DC2626' }}>late</Text>
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
 
             {shipment.vehicle && (
-              <View style={styles.detailItem}>
-                <Ionicons name="car-outline" size={16} color="#c7b9b0" />
-                <View>
-                  <Text style={styles.detailLabel}>Vehicle</Text>
-                  <Text style={styles.detailValue}>
+              <View style={[styles.detailItem, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)' }]}>
+                <Ionicons name="car-outline" size={16} color={isDarkMode ? "#c7b9b0" : "#78716C"} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.detailLabel, { color: isDarkMode ? '#b4a6a0' : '#78716C' }]}>Vehicle</Text>
+                  <Text style={[styles.detailValue, { color: isDarkMode ? '#fff6f0' : '#1C1917' }]} numberOfLines={1}>
                     {shipment.vehicle.licensePlate}
                   </Text>
                 </View>
@@ -143,24 +153,24 @@ export function ShipmentCard({ shipment, onPress }: Props) {
             )}
           </View>
 
-          <View style={styles.footer}>
+          <View style={[styles.footer, { borderTopColor: theme.border }]}>
             <View style={styles.footerLeft}>
-              <Ionicons name="cube-outline" size={14} color="#b9aba3" />
-              <Text style={styles.footerText}>
+              <Ionicons name="cube-outline" size={14} color={isDarkMode ? "#b9aba3" : "#78716C"} />
+              <Text style={[styles.footerText, { color: isDarkMode ? '#b9aba3' : '#78716C' }]} numberOfLines={1}>
                 {shipment.load.weight} kg
               </Text>
             </View>
             {shipment.driver ? (
               <View style={styles.footerRight}>
-                <Ionicons name="person-outline" size={14} color="#b9aba3" />
-                <Text style={styles.footerText}>
+                <Ionicons name="person-outline" size={14} color={isDarkMode ? "#b9aba3" : "#78716C"} />
+                <Text style={[styles.footerText, { color: isDarkMode ? '#b9aba3' : '#78716C' }]} numberOfLines={1}>
                   {shipment.driver.user.firstName || "Assigned"}
                 </Text>
               </View>
             ) : (
               <View style={styles.footerRight}>
-                <Ionicons name="person-outline" size={14} color="rgba(255,255,255,0.3)" />
-                <Text style={[styles.footerText, { color: 'rgba(255,255,255,0.35)' }]}>Unassigned</Text>
+                <Ionicons name="person-outline" size={14} color={isDarkMode ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"} />
+                <Text style={[styles.footerText, { color: isDarkMode ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)' }]}>Unassigned</Text>
               </View>
             )}
           </View>
@@ -175,7 +185,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
     backgroundColor: 'rgba(62, 53, 48, 0.18)',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 12 },
@@ -215,9 +224,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.7,
   },
   idBadge: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 10,
@@ -235,9 +242,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 16,
     borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
   },
   routePoint: {
     flexDirection: "row",
@@ -271,9 +276,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 12,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
     gap: 10,
   },
   detailLabel: {
@@ -295,7 +298,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.07)',
   },
   footerLeft: {
     flexDirection: "row",

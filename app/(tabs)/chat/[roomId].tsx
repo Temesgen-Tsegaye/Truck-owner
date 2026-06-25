@@ -12,6 +12,7 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -34,6 +35,7 @@ export default function ChatRoom() {
   const [loadingAgreement, setLoadingAgreement] = useState(true);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [showVehiclePicker, setShowVehiclePicker] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { isDarkMode } = useAppTheme();
   const colors = isDarkMode ? Colors.dark : Colors.light;
 
@@ -97,6 +99,15 @@ export default function ChatRoom() {
       console.error(e);
     }
   }, [roomId]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchMessages(), fetchAgreement()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchMessages, fetchAgreement]);
 
   useEffect(() => {
     if (roomId && socket) {
@@ -279,6 +290,13 @@ export default function ChatRoom() {
             );
           }}
           contentContainerStyle={styles.messageList}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
+            />
+          }
           ListHeaderComponent={
             <FloatingAgreementBar
               agreement={{

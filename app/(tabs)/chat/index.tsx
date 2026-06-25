@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { useChatRoomsQuery } from '@/query/chat';
@@ -9,7 +9,7 @@ import { Colors } from '@/constants/theme';
 
 export default function ChatList() {
   const router = useRouter();
-  const { data: rooms = [], isLoading, error } = useChatRoomsQuery();
+  const { data: rooms = [], isLoading, isFetching, error, refetch } = useChatRoomsQuery();
   const { isDarkMode } = useAppTheme();
   const colors = isDarkMode ? Colors.dark : Colors.light;
 
@@ -52,6 +52,13 @@ export default function ChatList() {
         data={rooms}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isFetching}
+            onRefresh={refetch}
+            tintColor={colors.primary}
+          />
+        }
         renderItem={({ item }) => (
           <Pressable 
             style={styles.roomItem}

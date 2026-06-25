@@ -11,6 +11,7 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
@@ -31,7 +32,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_BACKE
 
 export default function VehiclesScreen() {
   const router = useRouter();
-  const { data: vehicles, isLoading } = useVehiclesQuery();
+  const { data: vehicles, isLoading, isFetching, refetch } = useVehiclesQuery();
   const { mutate: createVehicle, isPending: isCreating } = useCreateVehicleMutation();
   const { mutate: updateVehicle, isPending: isUpdating } = useUpdateVehicleMutation();
   const { mutate: deleteVehicle } = useDeleteVehicleMutation();
@@ -520,6 +521,13 @@ export default function VehiclesScreen() {
         renderItem={renderVehicle}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isFetching}
+            onRefresh={refetch}
+            tintColor={theme.primary}
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Ionicons name="car-outline" size={64} color={theme.icon} />

@@ -9,6 +9,7 @@ import {
   FlatList,
   Platform,
   StatusBar,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -22,7 +23,7 @@ import { useProfile } from "@/query/profile/profile-query";
 
 export default function Dashboard() {
   const router = useRouter();
-  const { data, isLoading, refetch } = useLoadsQuery();
+  const { data, isLoading, isFetching, refetch } = useLoadsQuery();
 
   useFocusEffect(
     useCallback(() => {
@@ -209,6 +210,13 @@ export default function Dashboard() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={renderHeader}
+        refreshControl={
+          <RefreshControl
+            refreshing={isFetching}
+            onRefresh={refetch}
+            tintColor={theme.primary}
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>

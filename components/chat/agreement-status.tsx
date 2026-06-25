@@ -5,8 +5,8 @@ import { Colors } from "@/constants/theme";
 
 type Props = {
   agreement: {
-    merchantAgreed: boolean;
-    vehicleOwnerAgreed: boolean;
+    merchantStatus: string;
+    vehicleOwnerStatus: string;
   } | null;
   userType: "merchant" | "vehicleOwner";
 };
@@ -20,9 +20,10 @@ export function AgreementStatus({ agreement, userType }: Props) {
   }
 
   const isMerchant = userType === "merchant";
-  const otherPartyAgreed = isMerchant
-    ? agreement.vehicleOwnerAgreed
-    : agreement.merchantAgreed;
+  const otherPartyStatus = isMerchant
+    ? agreement.vehicleOwnerStatus
+    : agreement.merchantStatus;
+  const otherPartyAgreed = otherPartyStatus === "AGREED";
   const otherPartyLabel = isMerchant ? "Vehicle Owner" : "Merchant";
 
   const agreedColor = theme.statusDelivered;

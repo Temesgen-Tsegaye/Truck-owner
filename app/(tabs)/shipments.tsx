@@ -7,6 +7,7 @@ import {
   StatusBar,
   TextInput,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -18,7 +19,7 @@ import { Skeleton } from "@/components/global/skeleton";
 import { ShipmentCard } from "@/components/shipments/shipment-card";
 
 export default function Shipments() {
-  const { data: shipments, isLoading, error } = useShipmentsQuery();
+  const { data: shipments, isLoading, isFetching, error, refetch } = useShipmentsQuery();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const { isDarkMode } = useAppTheme();
@@ -293,6 +294,13 @@ export default function Shipments() {
         renderItem={renderShipmentItem}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={renderHeader}
+        refreshControl={
+          <RefreshControl
+            refreshing={isFetching}
+            onRefresh={refetch}
+            tintColor={theme.primary}
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No Shipments</Text>
